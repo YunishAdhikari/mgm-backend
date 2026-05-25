@@ -826,6 +826,7 @@
                 </div>
 
                 <div class="department-card">
+                    {{-- <img src="{{ asset('assets/landing/kitchen.jpg') }}" alt="Kitchen"> --}}
                     <img src="{{ asset('assets/landing/kitchen.jpg') }}" alt="Kitchen">
                     <div class="department-body">
                         <h3><i class="fas fa-hat-cook"></i> Kitchen</h3>
