@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Route;
 
 // --- PUBLIC ROUTES ---
 Route::get('/', [LandingPageController::class, 'index'])->name('landing');
+Route::view('/privacy-policy', 'privacy-policy');
 
 // Add these routes at the top of routes/web.php
 
