@@ -7,7 +7,7 @@
         <h2><i class="fa-solid fa-screwdriver-wrench"></i> Add Maintenance Job</h2>
     </div>
 
-    <form enctype="multipart/form-data" action="{{ route('admin.maintenance.store') }}" method="POST" enctype="multipart/form-data" class="maintenance-form">
+    <form enctype="multipart/form-data" action="{{ route('admin.maintenance.store') }}" method="POST" class="maintenance-form">
         @csrf
 
         <div class="form-grid">
@@ -67,7 +67,7 @@
 
         <div class="form-group">
             <label>Upload Image</label>
-            <input type="file" name="image">
+            <input type="file" name="image" class="file-input">
             @error('image') <small>{{ $message }}</small> @enderror
         </div>
 
@@ -79,72 +79,108 @@
 </div>
 
 <style>
-.maintenance-form {
-    display: grid;
-    gap: 20px;
-}
+    :root {
+        --bg-card: #27272a;
+        --bg-input: #1c1c1f;
+        --text-main: #fafafa;
+        --text-muted: #a1a1aa;
+        --border: #3f3f46;
+        --purple: #8b5cf6;
+        --pink: #ec4899;
+    }
 
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-}
+    .maintenance-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.form-group label {
-    font-weight: 700;
-    color: #222;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-    width: 100%;
-    padding: 14px 16px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    outline: none;
-    font-size: 15px;
-}
-
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
-    border-color: #1583ff;
-    box-shadow: 0 0 0 4px rgba(21,131,255,0.12);
-}
-
-.form-group small {
-    color: #dc2626;
-    font-weight: 700;
-}
-
-.submit-btn {
-    width: fit-content;
-    border: none;
-    cursor: pointer;
-    padding: 14px 24px;
-    border-radius: 14px;
-    background: linear-gradient(135deg,#1583ff,#ff15c4);
-    color: white;
-    font-size: 15px;
-    font-weight: 700;
-}
-
-@media(max-width: 768px) {
     .form-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group label {
+        font-weight: 700;
+        color: var(--text-muted);
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        outline: none;
+        font-size: 15px;
+        background: var(--bg-input);
+        color: var(--text-main);
+        transition: all 0.3s ease;
+    }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+        color: var(--text-muted);
+        opacity: 0.6;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        border-color: var(--purple);
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+    }
+
+    .form-group small {
+        color: #fca5a5;
+        font-weight: 700;
+    }
+
+    .file-input {
+        padding: 12px !important;
+        cursor: pointer;
     }
 
     .submit-btn {
-        width: 100%;
+        width: fit-content;
+        border: none;
+        cursor: pointer;
+        padding: 14px 24px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--purple), var(--pink));
+        color: white;
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
     }
-}
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+    }
+
+    @media(max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .submit-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 </style>
 
 @endsection

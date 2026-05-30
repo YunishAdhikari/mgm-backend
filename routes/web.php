@@ -4,10 +4,12 @@ use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\AdminAttendanceSettingController;
 use App\Http\Controllers\AdminDashboard;
+use App\Http\Controllers\AttendanceQrController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FbDashboardController;
 use App\Http\Controllers\KitchenBuffetController;
 use App\Http\Controllers\KitchenInventoryController;
 use App\Http\Controllers\KitchenRecipeController;
@@ -18,6 +20,10 @@ use App\Http\Controllers\ManagerAttendanceController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\ManagerReportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReceptionDashboardController;
+use App\Http\Controllers\RestaurantBookingController;
+use App\Http\Controllers\RestaurantBookingSettingController;
+use App\Http\Controllers\RestaurantTableController;
 use App\Http\Controllers\RotaController;
 use App\Http\Controllers\SopController;
 use App\Http\Controllers\SupervisorController;
@@ -30,7 +36,10 @@ use Illuminate\Support\Facades\Route;
 // --- PUBLIC ROUTES ---
 Route::get('/', [LandingPageController::class, 'index'])->name('landing');
 Route::view('/privacy-policy', 'privacy-policy');
+// Route::get('/attendance/live-qr', [AttendanceQrController::class, 'generate']);
+Route::get('/attendance/live-qr', [AttendanceQrController::class, 'generate']);
 
+Route::get('/attendance/live-qr-screen', [AttendanceQrController::class, 'screen']);
 // Add these routes at the top of routes/web.php
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -55,7 +64,6 @@ Route::middleware('auth')->group(function () {
 // --- ADMIN ROUTES ---
 // Access: Admins Only
 Route::middleware(['auth', 'role:admin'])->group(function () {
-    
     // Dashboard
     Route::get('/admin/dashboard', [AdminDashboard::class, 'dashboard'])->name('admin.dashboard');
 
@@ -83,11 +91,17 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::patch('/admin/complaints/{id}/status', [ComplaintController::class, 'updateStatus'])->name('admin.complaints.status');
 
     //attendence settings
-    Route::get('/admin/attendance-settings', [AdminAttendanceSettingController::class, 'edit'])
-        ->name('admin.attendance.settings');
+    Route::get('/admin/attendance-settings', [AdminAttendanceSettingController::class, 'edit'])->name('admin.attendance.settings');
+    Route::post('/admin/attendance-settings', [AdminAttendanceSettingController::class, 'update'])->name('admin.attendance.settings.update');
 
-    Route::post('/admin/attendance-settings', [AdminAttendanceSettingController::class, 'update'])
-        ->name('admin.attendance.settings.update');
+    //resturant seetings
+    Route::get('/restaurant/settings', [RestaurantBookingSettingController::class, 'index'])->name('restaurant.settings.index');
+    Route::post('/restaurant/settings', [RestaurantBookingSettingController::class, 'store'])->name('restaurant.settings.store');
+    Route::get('/restaurant/tables', [RestaurantTableController::class, 'index'])->name('restaurant.tables.index');
+    Route::post('/restaurant/tables', [RestaurantTableController::class, 'store'])->name('restaurant.tables.store');
+    Route::put('/restaurant/tables/{table}', [RestaurantTableController::class, 'update'])->name('restaurant.tables.update');
+    Route::delete('/restaurant/tables/{table}', [RestaurantTableController::class, 'destroy'])->name('restaurant.tables.destroy');
+    Route::get('/restaurant/tables/floor-plan', [RestaurantTableController::class, 'floorPlan'])->name('restaurant.tables.floor-plan');
 });
 
 
@@ -106,6 +120,7 @@ Route::middleware(['auth', 'role:Head chef'])->group(function () {
     Route::get('/kitchen-supervisor/current-inventory', [KitchenInventoryController::class, 'currentInventory'])->name('kitchen.inventory.current');
     Route::put('/kitchen-supervisor/inventory/{item}/update', [KitchenInventoryController::class, 'update'])->name('kitchen.inventory.update');
     Route::get('/kitchen-supervisor/inventory-history', [KitchenInventoryController::class, 'history'])->name('kitchen.inventory.history');
+    Route::get('/kitchen-supervisor/inventory-history/pdf', [KitchenInventoryController::class, 'historyPdf'])->name('kitchen.inventory.history.pdf');
 
     // Recipes
     Route::get('/kitchen-supervisor/recipes', [KitchenRecipeController::class, 'index'])->name('kitchen.recipes.index');
@@ -123,36 +138,18 @@ Route::middleware(['auth', 'role:Head chef'])->group(function () {
     Route::get('/kitchen-supervisor/wastage', [KitchenWastageController::class, 'index'])->name('kitchen.wastage.index');
     Route::post('/kitchen-supervisor/wastage/store', [KitchenWastageController::class, 'store'])->name('kitchen.wastage.store');
 
-    //rota
     // Rota
-Route::get(
-    '/kitchen-supervisor/rota',
-    [KitchenSupervisorController::class, 'index']
-)->name('kitchensupervisor.rota.index');
-
-Route::post(
-    '/kitchen-supervisor/rota/store',
-    [KitchenSupervisorController::class, 'storeRota']
-)->name('kitchensupervisor.rota.store');
-
-Route::delete(
-    '/kitchen-supervisor/rota/{id}',
-    [KitchenSupervisorController::class, 'destroy']
-)->name('kitchensupervisor.rota.destroy');
-
-Route::get(
-    '/kitchen-supervisor/rota/view',
-    [KitchenSupervisorController::class, 'view']
-)->name('kitchensupervisor.rota.view');
+    Route::get('/kitchen-supervisor/rota',[KitchenSupervisorController::class, 'index'])->name('kitchensupervisor.rota.index');
+    Route::post('/kitchen-supervisor/rota/store',[KitchenSupervisorController::class, 'storeRota'])->name('kitchensupervisor.rota.store');
+    Route::delete('/kitchen-supervisor/rota/{id}',[KitchenSupervisorController::class, 'destroy'])->name('kitchensupervisor.rota.destroy');
+    Route::get('/kitchen-supervisor/rota/view',[KitchenSupervisorController::class, 'view'])->name('kitchensupervisor.rota.view');
+   
 });
 
-Route::get('/kitchen-supervisor/inventory-history/pdf', [KitchenInventoryController::class, 'historyPdf'])
-    ->name('kitchen.inventory.history.pdf');
+
 
 // --- MANAGER ROUTES ---
-// Access: Managers Only
 Route::middleware(['auth', 'role:manager'])->group(function () {
-    
     // Dashboard
     Route::get('/manager/dashboard', [ManagerController::class, 'managerDashboard'])->name('manager.dashboard');
 
@@ -195,7 +192,6 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
 // --- SUPERVISOR ROUTES ---
 // Access: Supervisors Only
 Route::middleware(['auth', 'role:supervisor'])->group(function () {
-    
     // Dashboard
     Route::get('/supervisor/dashboard', [SupervisorController::class, 'dashboard'])->name('supervisor.dashboard');
 
@@ -209,6 +205,35 @@ Route::middleware(['auth', 'role:supervisor'])->group(function () {
     Route::get('/supervisor/rota/view', [SupervisorController::class, 'view'])->name('supervisor.rota.view');
 });
 
+// --- RECEPTION ROUTES ---
+// --- RECEPTION ROUTES ---
+Route::middleware(['auth', 'department:reception,front-office'])->prefix('reception')->name('reception.')->group(function () {
+        Route::get('/dashboard', [ReceptionDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/restaurant-bookings', [RestaurantBookingController::class, 'index'])->name('restaurant.bookings.index');
+        Route::get('/restaurant-bookings/{type}/slots', [RestaurantBookingController::class, 'slots'])->name('restaurant.bookings.slots');
+        Route::get('/restaurant-bookings/{type}/slots/{slotStart}/{slotEnd}/create', [RestaurantBookingController::class, 'create'])->name('restaurant.bookings.create');
+        Route::post('/restaurant-bookings/store', [RestaurantBookingController::class, 'store'])->name('restaurant.bookings.store');
+    });
+
+
+// --- F&B ROUTES ---
+Route::middleware(['auth', 'department:fb,f-b,f-and-b,food-and-beverage'])
+    ->prefix('fb')
+    ->name('fb.')
+    ->group(function () {
+
+        Route::get('/dashboard', [FbDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        Route::get('/restaurant-bookings', [RestaurantBookingController::class, 'index'])
+            ->name('restaurant.bookings.index');
+
+        Route::get('/restaurant-bookings/{type}/slots', [RestaurantBookingController::class, 'slots'])
+            ->name('restaurant.bookings.slots');
+
+        Route::get('/floor-plan', [RestaurantTableController::class, 'floorPlan'])
+            ->name('floor-plan');
+    });
 
 
 // --- AUTHENTICATION ---

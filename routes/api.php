@@ -62,14 +62,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //attendance
 
-Route::get('/attendance/status', [AttendanceApiController::class, 'status']);
-Route::post('/attendance/clock-in', [AttendanceApiController::class, 'clockIn']);
-Route::post('/attendance/clock-out', [AttendanceApiController::class, 'clockOut']);
-Route::get('/attendance/history', [AttendanceApiController::class, 'history']);
+// Route::get('/attendance/status', [AttendanceApiController::class, 'status']);
+// Route::post('/attendance/clock-in', [AttendanceApiController::class, 'clockIn']);
+// Route::post('/attendance/clock-out', [AttendanceApiController::class, 'clockOut']);
+// Route::get('/attendance/history', [AttendanceApiController::class, 'history']);
+Route::post('/attendance/scan-qr', [AttendanceApiController::class, 'scanQr']);
 
 
 
-    Route::get('/departments', function () {
+Route::get('/departments', function () {
     return response()->json([
         'success' => true,
         'departments' => \App\Models\Department::all()

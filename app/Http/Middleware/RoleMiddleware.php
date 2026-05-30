@@ -16,11 +16,15 @@ class RoleMiddleware
             abort(403, 'Unauthorized access.');
         }
 
-        $userRole = strtolower($user->role->name);
+        $userRoleName = strtolower($user->role->name ?? '');
+        $userRoleSlug = strtolower($user->role->slug ?? '');
 
         $allowedRoles = array_map('strtolower', $roles);
 
-        if (!in_array($userRole, $allowedRoles)) {
+        if (
+            !in_array($userRoleName, $allowedRoles) &&
+            !in_array($userRoleSlug, $allowedRoles)
+        ) {
             abort(403, 'You do not have permission to access this page.');
         }
 

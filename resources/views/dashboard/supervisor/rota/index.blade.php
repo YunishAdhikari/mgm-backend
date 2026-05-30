@@ -3,9 +3,8 @@
 @section('content')
 
 <div class="manager-page-card">
-
     <div class="page-header">
-        <div>
+        <div class="header-content">
             <h1>Rota Maker</h1>
             <p>Create normal shifts, split shifts, day off, holiday and sick records.</p>
         </div>
@@ -13,6 +12,7 @@
 
     @if(session('success'))
         <div class="success-message">
+            <i class="fa-solid fa-circle-check"></i>
             {{ session('success') }}
         </div>
     @endif
@@ -21,30 +21,28 @@
         @csrf
 
         <div class="form-grid">
-         
-
-<div class="form-group">
-    <label>Employee</label>
-    <select name="user_id" id="employeeSelect" required>
-        <option value="">Select Employee</option>
-        @foreach($employees as $employee)
-            <option 
-                value="{{ $employee->id }}"
-                data-department="{{ $employee->department_id }}"
-            >
-                {{ $employee->name }} - {{ $employee->department->name ?? 'N/A' }}
-            </option>
-        @endforeach
-    </select>
-</div>
+            <div class="form-group">
+                <label><i class="fa-solid fa-user"></i> Employee</label>
+                <select name="user_id" id="employeeSelect" required>
+                    <option value="">Select Employee</option>
+                    @foreach($employees as $employee)
+                        <option 
+                            value="{{ $employee->id }}"
+                            data-department="{{ $employee->department_id }}"
+                        >
+                            {{ $employee->name }} - {{ $employee->department->name ?? 'N/A' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
             <div class="form-group">
-                <label>Shift Date</label>
+                <label><i class="fa-regular fa-calendar"></i> Shift Date</label>
                 <input type="date" name="shift_date" required>
             </div>
 
             <div class="form-group">
-                <label>Shift Type</label>
+                <label><i class="fa-solid fa-clock"></i> Shift Type</label>
                 <select name="shift_type" id="shiftType" required>
                     <option value="morning">Morning</option>
                     <option value="evening">Evening</option>
@@ -56,50 +54,49 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label><i class="fa-solid fa-utensils"></i> Break Minutes</label>
+                <input type="number" name="break_minutes" value="0" min="0">
+            </div>
+
             <div class="normal-time">
                 <div class="form-group">
-                    <label>Start Time</label>
+                    <label><i class="fa-solid fa-play"></i> Start Time</label>
                     <input type="time" name="start_time">
                 </div>
 
                 <div class="form-group">
-                    <label>End Time</label>
+                    <label><i class="fa-solid fa-stop"></i> End Time</label>
                     <input type="time" name="end_time">
                 </div>
             </div>
 
-            <div class="split-time" style="display:none;">
+            <div class="split-time">
                 <div class="form-group">
-                    <label>Split Start 1</label>
+                    <label><i class="fa-solid fa-1"></i> Split Start 1</label>
                     <input type="time" name="split_start_time_1">
                 </div>
 
                 <div class="form-group">
-                    <label>Split End 1</label>
+                    <label><i class="fa-solid fa-1"></i> Split End 1</label>
                     <input type="time" name="split_end_time_1">
                 </div>
 
                 <div class="form-group">
-                    <label>Split Start 2</label>
+                    <label><i class="fa-solid fa-2"></i> Split Start 2</label>
                     <input type="time" name="split_start_time_2">
                 </div>
 
                 <div class="form-group">
-                    <label>Split End 2</label>
+                    <label><i class="fa-solid fa-2"></i> Split End 2</label>
                     <input type="time" name="split_end_time_2">
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Break Minutes</label>
-                <input type="number" name="break_minutes" value="0" min="0">
-            </div>
-
             <div class="form-group full">
-                <label>Notes</label>
+                <label><i class="fa-solid fa-note-sticky"></i> Notes</label>
                 <textarea name="notes" placeholder="Optional rota note"></textarea>
             </div>
-
         </div>
 
         <button type="submit" class="save-btn">
@@ -107,35 +104,34 @@
             Add Shift
         </button>
     </form>
-
 </div>
 
 <div class="manager-page-card mt">
-
     <div class="page-header">
-        <h2>Current Rota Shifts</h2>
+        <h2><i class="fa-solid fa-list"></i> Current Rota Shifts</h2>
     </div>
 
     <div class="table-wrapper">
         <form action="{{ route('manager.rota.publish') }}" method="POST" class="publish-form">
-    @csrf
-    @method('PATCH')
+            @csrf
+            @method('PATCH')
 
-    <div>
-        <label>From Date</label>
-        <input type="date" name="from_date" required>
-    </div>
+            <div>
+                <label>From Date</label>
+                <input type="date" name="from_date" required>
+            </div>
 
-    <div>
-        <label>To Date</label>
-        <input type="date" name="to_date" required>
-    </div>
+            <div>
+                <label>To Date</label>
+                <input type="date" name="to_date" required>
+            </div>
 
-    <button type="submit">
-        <i class="fa-solid fa-paper-plane"></i>
-        Publish Rota
-    </button>
-</form>
+            <button type="submit">
+                <i class="fa-solid fa-paper-plane"></i>
+                Publish Rota
+            </button>
+        </form>
+
         <table>
             <thead>
                 <tr>
@@ -163,9 +159,7 @@
                         </td>
                         <td>
                             @if($shift->start_time && $shift->end_time)
-                                {{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }}
-                                -
-                                {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}
+                                {{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}
                             @else
                                 N/A
                             @endif
@@ -188,13 +182,15 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="empty-text">No rota shifts found.</td>
+                        <td colspan="8" class="empty-text">
+                            <i class="fa-regular fa-calendar-xmark"></i>
+                            No rota shifts found.
+                        </td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
-
 </div>
 
 <script>
@@ -226,225 +222,318 @@
         const departmentSelect = document.getElementById('departmentSelect');
         const employeeSelect = document.getElementById('employeeSelect');
 
-        const originalEmployees = Array.from(employeeSelect.querySelectorAll('option'));
+        if (employeeSelect) {
+            const originalEmployees = Array.from(employeeSelect.querySelectorAll('option'));
 
-        departmentSelect.addEventListener('change', function () {
-            const selectedDepartmentId = this.value;
+            if (departmentSelect) {
+                departmentSelect.addEventListener('change', function () {
+                    const selectedDepartmentId = this.value;
+                    employeeSelect.innerHTML = '';
 
-            employeeSelect.innerHTML = '';
+                    originalEmployees.forEach(function (option) {
+                        if (option.value === '') {
+                            employeeSelect.appendChild(option.cloneNode(true));
+                            return;
+                        }
 
-            originalEmployees.forEach(function (option) {
-                if (option.value === '') {
-                    employeeSelect.appendChild(option.cloneNode(true));
-                    return;
-                }
-
-                if (option.dataset.department === selectedDepartmentId) {
-                    employeeSelect.appendChild(option.cloneNode(true));
-                }
-            });
-        });
+                        if (option.dataset.department === selectedDepartmentId) {
+                            employeeSelect.appendChild(option.cloneNode(true));
+                        }
+                    });
+                });
+            }
+        }
     });
 </script>
 
 <style>
-.manager-page-card {
-    background: white;
-    border-radius: 24px;
-    padding: 24px;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.06);
-}
+    :root {
+        --primary: #8b5cf6;
+        --primary-hover: #a78bfa;
+        --secondary: #ec4899;
+        
+        --bg-card: #27272a;
+        --bg-input: #1c1c1f;
+        
+        --text-main: #fafafa;
+        --text-muted: #a1a1aa;
+        --text-dim: #71717a;
+        
+        --border: #3f3f46;
+        --border-light: #52525b;
+        
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        
+        --glow: 0 0 20px rgba(139, 92, 246, 0.3);
+        
+        --radius-lg: 1.5rem;
+        --radius-md: 1rem;
+    }
 
-.mt {
-    margin-top: 24px;
-}
+    .manager-page-card {
+        background: var(--bg-card);
+        border-radius: var(--radius-lg);
+        padding: 28px;
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        animation: fadeIn 0.4s ease-out;
+    }
 
-.page-header {
-    margin-bottom: 22px;
-}
+    .mt {
+        margin-top: 28px;
+    }
 
-.page-header h1,
-.page-header h2 {
-    margin: 0 0 6px;
-    color: #111827;
-}
+    .page-header {
+        margin-bottom: 28px;
+    }
 
-.publish-form {
-    display: flex;
-    gap: 14px;
-    align-items: end;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
+    .page-header h1,
+    .page-header h2 {
+        margin: 0 0 6px;
+        font-size: 26px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 
-.publish-form div {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+    .page-header p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 14px;
+    }
 
-.publish-form label {
-    font-weight: 800;
-    color: #111827;
-}
+    .success-message {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #6ee7b7;
+        padding: 16px 20px;
+        border-radius: var(--radius-md);
+        margin-bottom: 24px;
+        font-weight: 600;
+    }
 
-.publish-form input {
-    padding: 12px 14px;
-    border: 1px solid #d1d5db;
-    border-radius: 12px;
-}
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
 
-.publish-form button {
-    border: none;
-    background: #22c55e;
-    color: white;
-    padding: 13px 18px;
-    border-radius: 12px;
-    font-weight: 900;
-    cursor: pointer;
-}
-.page-header p {
-    margin: 0;
-    color: #6b7280;
-}
-
-.success-message {
-    background: #dcfce7;
-    color: #166534;
-    padding: 14px 16px;
-    border-radius: 14px;
-    margin-bottom: 18px;
-    font-weight: 800;
-}
-
-.rota-form {
-    margin-top: 10px;
-}
-
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-}
-
-.normal-time,
-.split-time {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-}
-
-.split-time {
-    grid-template-columns: repeat(4, 1fr);
-}
-
-.form-group.full {
-    grid-column: 1 / -1;
-}
-
-.form-group label {
-    display: block;
-    font-weight: 800;
-    color: #111827;
-    margin-bottom: 8px;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    border: 1px solid #d1d5db;
-    border-radius: 14px;
-    padding: 13px 14px;
-    outline: none;
-    font-size: 15px;
-}
-
-.form-group textarea {
-    min-height: 90px;
-    resize: vertical;
-}
-
-.save-btn {
-    margin-top: 22px;
-    border: none;
-    background: linear-gradient(135deg, #1583ff, #ff15c4);
-    color: white;
-    padding: 14px 22px;
-    border-radius: 14px;
-    font-weight: 900;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.table-wrapper {
-    overflow-x: auto;
-}
-
-table {
-    width: 100%;
-    min-width: 1000px;
-    border-collapse: collapse;
-}
-
-th {
-    background: #f9fafb;
-    padding: 16px;
-    text-align: left;
-    color: #111827;
-}
-
-td {
-    padding: 16px;
-    border-bottom: 1px solid #eef2f7;
-    vertical-align: middle;
-}
-
-.badge {
-    padding: 7px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
-.type-morning { background: #dbeafe; color: #1d4ed8; }
-.type-evening { background: #fef3c7; color: #92400e; }
-.type-night { background: #ede9fe; color: #6d28d9; }
-.type-split { background: #fae8ff; color: #a21caf; }
-.type-day_off { background: #e5e7eb; color: #374151; }
-.type-holiday { background: #dcfce7; color: #166534; }
-.type-sick { background: #fee2e2; color: #991b1b; }
-
-.status-draft { background: #fef3c7; color: #92400e; }
-.status-published { background: #dcfce7; color: #166534; }
-
-.delete-btn {
-    width: 38px;
-    height: 38px;
-    border: none;
-    border-radius: 12px;
-    background: #fee2e2;
-    color: #991b1b;
-    cursor: pointer;
-}
-
-.empty-text {
-    text-align: center;
-    color: #777;
-    font-weight: 800;
-}
-
-@media(max-width: 900px) {
-    .form-grid,
     .normal-time,
     .split-time {
-        grid-template-columns: 1fr;
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
     }
-}
-</style>
 
-@endsection
+    .split-time {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .form-group.full {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .form-group label i {
+        width: 16px;
+        color: var(--primary);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+        outline: none;
+        font-size: 15px;
+        color: var(--text-main);
+        transition: all 0.2s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    }
+
+    .form-group select option {
+        background: var(--bg-card);
+    }
+
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .save-btn {
+        margin-top: 28px;
+        border: none;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 16px 28px;
+        border-radius: var(--radius-md);
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+
+    .save-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+    }
+
+    .publish-form {
+        display: flex;
+        gap: 16px;
+        align-items: end;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        padding: 20px;
+        background: var(--bg-input);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+    }
+
+    .publish-form div {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .publish-form label {
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .publish-form input {
+        padding: 12px 16px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text-main);
+    }
+
+    .publish-form button {
+        border: none;
+        background: linear-gradient(135deg, var(--success), #059669);
+        color: white;
+        padding: 14px 20px;
+        border-radius: var(--radius-md);
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .publish-form button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: collapse;
+    }
+
+    th {
+        background: var(--bg-input);
+        padding: 16px;
+        text-align: left;
+        color: var(--text-muted);
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    td {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+        color: var(--text-main);
+    }
+
+    tr:hover td {
+        background: rgba(255,255,255,0.02);
+    }
+
+    .badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .type-morning { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .type-evening { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .type-night { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+    .type-split { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
+    .type-day_off { background: rgba(113, 113, 122, 0.15); color: #a1a1aa; }
+    .type-holiday { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+    .type-sick { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+
+    .status-draft { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .status-published { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+
+    .delete-btn {
+        width: 38px;
+        height: 38px;
+        border: none;
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.1);
+        color: #fca5a5;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .delete-btn:hover {
+        background: rgba(239, 68, 68, 0.2);
+        transform: scale(1.05);
+    }
+
+    .empty-text {
+        text-align: center;
+        color: var(--text-dim);
+        font-weight: 600;
+        padding: 40px;
+    }
+
+    </style>
+
+    @endsection

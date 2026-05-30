@@ -13,7 +13,10 @@
     </div>
 
     @if(session('success'))
-        <div class="success-message">{{ session('success') }}</div>
+        <div class="success-message">
+            <i class="fa-solid fa-circle-check"></i>
+            {{ session('success') }}
+        </div>
     @endif
 
     <div class="table-wrapper">
@@ -87,120 +90,176 @@
 </div>
 
 <style>
-.add-btn {
-    text-decoration: none;
-    background: linear-gradient(135deg,#1583ff,#ff15c4);
-    color: white;
-    padding: 11px 18px;
-    border-radius: 12px;
-    font-weight: 700;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
+    :root {
+        --bg-card: #27272a;
+        --bg-input: #1c1c1f;
+        --text-main: #fafafa;
+        --text-muted: #a1a1aa;
+        --border: #3f3f46;
+        --purple: #8b5cf6;
+        --pink: #ec4899;
+    }
 
-.success-message {
-    background: #dcfce7;
-    color: #166534;
-    padding: 14px 16px;
-    border-radius: 12px;
-    margin-bottom: 18px;
-    font-weight: 700;
-}
-
-.table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-}
-
-.job-img {
-    width: 75px;
-    height: 55px;
-    object-fit: cover;
-    border-radius: 10px;
-}
-
-.no-image {
-    color: #888;
-    font-size: 13px;
-}
-
-.badge {
-    padding: 7px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 700;
-    display: inline-block;
-    white-space: nowrap;
-}
-
-.priority-low {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.priority-medium {
-    background: #dbeafe;
-    color: #1d4ed8;
-}
-
-.priority-high {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.priority-urgent {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.status-pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.status-in_progress {
-    background: #dbeafe;
-    color: #1d4ed8;
-}
-
-.status-completed {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.status-cancelled {
-    background: #e5e7eb;
-    color: #374151;
-}
-
-.status-btn {
-    border: none;
-    cursor: pointer;
-    padding: 9px 14px;
-    border-radius: 10px;
-    background: #eef6ff;
-    color: #1583ff;
-    font-weight: 700;
-}
-
-.empty-text {
-    text-align: center;
-    padding: 25px;
-    color: #777;
-    font-weight: 700;
-}
-
-@media(max-width: 768px) {
     .add-btn {
+        text-decoration: none;
+        background: linear-gradient(135deg, var(--purple), var(--pink));
+        color: white;
+        padding: 11px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .add-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+
+    .success-message {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #6ee7b7;
+        padding: 14px 16px;
+        border-radius: 12px;
+        margin-bottom: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .table-wrapper {
         width: 100%;
-        justify-content: center;
+        overflow-x: auto;
     }
 
     table {
+        width: 100%;
         min-width: 1100px;
+        border-collapse: collapse;
     }
-}
+
+    thead {
+        background: var(--bg-input);
+    }
+
+    th {
+        padding: 14px;
+        text-align: left;
+        color: var(--text-muted);
+        font-weight: 700;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    td {
+        padding: 14px;
+        color: var(--text-main);
+        border-bottom: 1px solid var(--border);
+    }
+
+    tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .job-img {
+        width: 75px;
+        height: 55px;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+
+    .no-image {
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .badge {
+        padding: 7px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .priority-low {
+        background: rgba(16, 185, 129, 0.15);
+        color: #6ee7b7;
+    }
+
+    .priority-medium {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+    }
+
+    .priority-high {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+    }
+
+    .priority-urgent {
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
+    }
+
+    .status-pending {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+    }
+
+    .status-in_progress {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+    }
+
+    .status-completed {
+        background: rgba(16, 185, 129, 0.15);
+        color: #6ee7b7;
+    }
+
+    .status-cancelled {
+        background: rgba(113, 113, 122, 0.15);
+        color: #a1a1aa;
+    }
+
+    .status-btn {
+        border: none;
+        cursor: pointer;
+        padding: 9px 14px;
+        border-radius: 10px;
+        background: rgba(139, 92, 246, 0.15);
+        color: #a78bfa;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+
+    .status-btn:hover {
+        background: rgba(139, 92, 246, 0.25);
+        transform: translateY(-2px);
+    }
+
+    .empty-text {
+        text-align: center;
+        padding: 25px;
+        color: var(--text-muted);
+        font-weight: 700;
+    }
+
+    @media(max-width: 768px) {
+        .card-header {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .add-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 </style>
 
 @endsection

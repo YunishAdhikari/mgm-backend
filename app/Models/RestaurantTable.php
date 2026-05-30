@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class RestaurantTable extends Model
+{
+ protected $fillable = [
+    'table_name',
+    'capacity',
+    'table_shape',
+    'status',
+    'position_x',
+    'position_y',
+    'is_active',
+];
+protected $casts = [
+    'is_active' => 'boolean',
+];
+
+public function bookings()
+{
+    return $this->hasMany(RestaurantBooking::class);
+}
+}

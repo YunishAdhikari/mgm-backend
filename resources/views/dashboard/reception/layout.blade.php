@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supervisor Dashboard</title>
-    <link rel="icon" type="image/png" href="{{ asset('myapp.png') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>Reception Dashboard</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
     <style>
         :root {
             --primary: #8b5cf6;
@@ -28,21 +30,22 @@
             --border-light: #52525b;
             
             --success: #10b981;
+            --warning: #f59e0b;
             --danger: #ef4444;
+            --info: #3b82f6;
             
             --glow: 0 0 20px rgba(139, 92, 246, 0.3);
             --glow-accent: 0 0 20px rgba(236, 72, 153, 0.3);
             
-            --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
             --radius-lg: 1.5rem;
             --radius-md: 1rem;
             --radius-sm: 0.75rem;
         }
 
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
@@ -61,20 +64,17 @@
                 var(--bg-dark);
         }
 
-        /* --- Sidebar --- */
+        /* ============ SIDEBAR ============ */
         .sidebar {
             width: 280px;
             background: var(--bg-sidebar);
             border-right: 1px solid var(--border);
-            padding: 24px 16px;
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
             display: flex;
             flex-direction: column;
-            z-index: 100;
-            transition: transform 0.3s ease, background 0.3s;
+            position: fixed;
+            height: 100vh;
+            padding: 24px 16px;
+            transition: transform 0.3s ease;
         }
 
         .sidebar::before {
@@ -83,40 +83,66 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 150px;
+            height: 200px;
             background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);
             pointer-events: none;
         }
 
+        .sidebar-header {
+            padding: 0 12px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
         .logo {
-            font-size: 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            box-shadow: var(--glow);
+        }
+
+        .logo-text {
+            font-size: 24px;
             font-weight: 800;
             background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 4px;
-            letter-spacing: -0.02em;
-            padding-left: 12px;
         }
 
-        .role-label {
-            color: var(--text-muted);
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 32px;
-            padding-left: 12px;
+        .sidebar-nav {
+            flex: 1;
+            padding: 0 4px;
+            overflow-y: auto;
+            position: relative;
+            z-index: 1;
         }
 
-        .menu-title {
+        .nav-section {
+            margin-bottom: 8px;
+        }
+
+        .nav-section-title {
             font-size: 11px;
             font-weight: 700;
-            color: var(--text-dim);
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            margin: 28px 16px 10px;
+            color: var(--text-dim);
+            padding: 24px 12px 10px;
         }
 
-        .menu {
+        .nav-link {
             display: flex;
             align-items: center;
             gap: 14px;
@@ -131,7 +157,7 @@
             overflow: hidden;
         }
 
-        .menu::before {
+        .nav-link::before {
             content: '';
             position: absolute;
             inset: 0;
@@ -140,127 +166,97 @@
             transition: transform 0.5s ease;
         }
 
-        .menu:hover::before {
+        .nav-link:hover::before {
             transform: translateX(100%);
         }
 
-        .menu i {
-            width: 20px;
-            text-align: center;
-            font-size: 18px;
-            transition: transform 0.2s ease;
-        }
-
-        .menu:hover i {
-            transform: scale(1.1);
-        }
-
-        .menu:hover {
+        .nav-link:hover {
             background: rgba(255,255,255,0.03);
             color: var(--text-main);
         }
 
-        .menu.active {
+        .nav-link.active {
             background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.1));
             color: var(--primary-hover);
             border: 1px solid rgba(139, 92, 246, 0.3);
             box-shadow: var(--glow);
         }
 
-        .menu.active i {
+        .nav-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .nav-link.active .nav-icon {
             color: var(--primary-hover);
         }
 
-        .menu-dot {
-            position: absolute;
-            right: 16px;
-            width: 6px;
-            height: 6px;
-            background: var(--secondary);
-            border-radius: 50%;
-            opacity: 0;
-            transition: opacity 0.2s, box-shadow 0.2s;
-        }
-
-        .menu.active .menu-dot {
-            opacity: 1;
-            box-shadow: var(--glow-accent);
-        }
-
-        /* --- Main Content --- */
-        .main-content {
+        /* ============ MAIN ============ */
+        .main {
             flex: 1;
             margin-left: 280px;
-            padding: 24px;
+            display: flex;
+            flex-direction: column;
             min-height: 100vh;
         }
 
         .topbar {
             background: var(--bg-card);
-            padding: 24px 32px;
-            border-radius: var(--radius-lg);
-            margin-bottom: 32px;
-            border: 1px solid var(--border);
+            padding: 20px 32px;
+            border-bottom: 1px solid var(--border);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            gap: 20px;
-            box-shadow: var(--shadow-lg);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .topbar::before {
-            content: '';
-            position: absolute;
+            justify-content: space-between;
+            position: sticky;
             top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            z-index: 10;
         }
 
-        .topbar-text h2 {
-            font-size: 28px;
+        .topbar-title {
+            font-size: 24px;
             font-weight: 800;
-            margin-bottom: 4px;
-            letter-spacing: -0.02em;
             background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .topbar-text p {
-            color: var(--text-muted);
-            font-size: 15px;
-            font-weight: 500;
-        }
-
-        .logout-btn {
+        .topbar-right {
             display: flex;
             align-items: center;
-            gap: 10px;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            background: rgba(239, 68, 68, 0.1);
-            color: #fca5a5;
-            padding: 14px 24px;
+            gap: 12px;
+        }
+
+        .topbar-btn {
+            padding: 12px 20px;
             border-radius: var(--radius-md);
             font-weight: 700;
-            font-size: 15px;
-            font-family: inherit;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s ease;
             cursor: pointer;
-            transition: all 0.25s ease;
-            white-space: nowrap;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .logout-btn:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.5);
+        .topbar-btn-primary {
+            background: linear-gradient(135deg, var(--danger), #b91c1c);
+            color: white;
+        }
+
+        .topbar-btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
-        /* --- Mobile Header --- */
+        .content {
+            flex: 1;
+            padding: 28px 32px;
+        }
+
+        /* ============ MOBILE HEADER ============ */
         .mobile-header {
             display: none;
             background: var(--bg-sidebar);
@@ -269,7 +265,7 @@
             top: 0;
             z-index: 90;
             border-bottom: 1px solid var(--border);
-            margin: -24px -24px 24px;
+            margin: -28px -32px 28px;
         }
 
         .mobile-header-content {
@@ -290,23 +286,16 @@
             cursor: pointer;
             font-size: 20px;
             color: var(--text-main);
-            transition: all 0.2s;
-        }
-
-        .menu-toggle:hover {
-            border-color: var(--primary);
-            box-shadow: var(--glow);
         }
 
         .mobile-logo {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 800;
             background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        /* --- Overlay --- */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -316,7 +305,52 @@
             backdrop-filter: blur(4px);
         }
 
-        /* --- Scrollbar --- */
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .mobile-header {
+                display: block;
+            }
+
+            .sidebar-overlay.open {
+                display: block;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 16px 20px;
+            }
+
+            .topbar-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .mobile-header {
+                margin: -20px -20px 20px;
+            }
+        }
+
+        /* ============ SCROLLBAR ============ */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -334,62 +368,8 @@
             background: var(--text-dim);
         }
 
-        /* --- Responsive --- */
-        @media (max-width: 1024px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-
-            .mobile-header {
-                display: block;
-            }
-
-            .sidebar-overlay.open {
-                display: block;
-            }
-
-            .topbar {
-                flex-direction: column;
-                align-items: flex-start;
-                padding: 20px;
-            }
-
-            .logout-btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .topbar-text h2 {
-                font-size: 22px;
-            }
-
-            .topbar {
-                padding: 20px;
-                border-radius: var(--radius-md);
-            }
-
-            .menu {
-                padding: 12px 14px;
-                font-size: 14px;
-            }
-
-            .logo {
-                font-size: 26px;
-            }
-        }
-
-        /* --- Animations --- */
-        @keyframes slideIn {
+        /* ============ ANIMATIONS ============ */
+        @keyframes fadeIn {
             from {
                 opacity: 0;
                 transform: translateY(10px);
@@ -400,12 +380,11 @@
             }
         }
 
-        .topbar {
-            animation: slideIn 0.4s ease-out;
+        .content {
+            animation: fadeIn 0.4s ease-out;
         }
     </style>
 </head>
-
 <body>
 
 <div class="layout">
@@ -415,7 +394,7 @@
             <button class="menu-toggle" onclick="toggleSidebar()">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <div class="mobile-logo">MGRH</div>
+            <div class="mobile-logo">MGRH Reception</div>
             <div style="width: 44px;"></div>
         </div>
     </div>
@@ -424,85 +403,59 @@
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <aside class="sidebar" id="sidebar">
-        <div class="logo">MGRH</div>
-        <div class="role-label">Supervisor Panel</div>
-
-        @php
-        $department = strtolower(auth()->user()->department->name ?? '');
-        @endphp
-
-        <div class="menu-title">Main</div>
-
-        <a href="{{ route('supervisor.dashboard') }}" class="menu {{ request()->routeIs('supervisor.dashboard') ? 'active' : '' }}">
-            <i class="fa-solid fa-gauge"></i>
-            <span>Dashboard</span>
-            <span class="menu-dot"></span>
-        </a>
-
-        <a href="{{ route('supervisor.holidays.calendar') }}" class="menu {{ request()->routeIs('supervisor.holidays.calendar') ? 'active' : '' }}">
-            <i class="fa-solid fa-calendar-days"></i>
-            <span>Holiday Calendar</span>
-            <span class="menu-dot"></span>
-        </a>
-
-        <a href="{{ route('supervisor.rota.index') }}" class="menu {{ request()->routeIs('supervisor.rota.index') ? 'active' : '' }}">
-            <i class="fa-solid fa-clipboard-list"></i>
-            <span>Rota Maker</span>
-            <span class="menu-dot"></span>
-        </a>
-
-        <a href="{{ route('supervisor.rota.view') }}" class="menu {{ request()->routeIs('supervisor.rota.view') ? 'active' : '' }}">
-            <i class="fa-solid fa-table"></i>
-            <span>View Rota</span>
-            <span class="menu-dot"></span>
-        </a>
-
-        @if(in_array($department, ['reception', 'front office']))
-            <div class="menu-title">Reception</div>
-
-            <a href="{{ route('reception.restaurant.bookings.index') }}" class="menu {{ request()->routeIs('reception.restaurant.bookings.*') ? 'active' : '' }}">
-                <i class="fa-solid fa-utensils"></i>
-                <span>Restaurant Bookings</span>
-            </a>
-
-            <a href="#" class="menu">
-                <i class="fa-solid fa-spa"></i>
-                <span>Spa Bookings</span>
-            </a>
-        @endif
-
-        @if(in_array($department, ['f&b', 'fb', 'f and b', 'food and beverage']))
-            <div class="menu-title">F&B</div>
-
-            <a href="{{ route('fb.restaurant.bookings.index') }}" class="menu {{ request()->routeIs('fb.restaurant.bookings.*') ? 'active' : '' }}">
-                <i class="fa-solid fa-utensils"></i>
-                <span>Restaurant Bookings</span>
-            </a>
-
-            <a href="{{ route('fb.floor-plan') }}" class="menu {{ request()->routeIs('fb.floor-plan') ? 'active' : '' }}">
-                <i class="fa-solid fa-chair"></i>
-                <span>Floor Plan</span>
-            </a>
-        @endif
-    </aside>
-
-    <main class="main-content">
-        <div class="topbar">
-            <div class="topbar-text">
-                <h2>Supervisor Panel</h2>
-                <p>Manage department rota drafts and view holiday availability.</p>
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-hotel"></i>
+                </div>
+                <div class="logo-text">MGRH </div>
             </div>
-
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="logout-btn">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    Logout
-                </button>
-            </form>
         </div>
 
-        @yield('content')
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Menu</div>
+                
+                <a href="{{ route('reception.dashboard') }}" class="nav-link {{ Request::is('reception/dashboard*') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="{{ route('reception.restaurant.bookings.index') }}" class="nav-link {{ Request::is('reception/restaurant*') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="fa-solid fa-utensils"></i></span>
+                    <span>F&B</span>
+                </a>
+                
+                <a href="#" class="nav-link">
+                    <span class="nav-icon"><i class="fa-solid fa-spa"></i></span>
+                    <span>Spa</span>
+                </a>
+                
+                <a href="#" class="nav-link">
+                    <span class="nav-icon"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+                    <span>Maintenance</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="topbar">
+            <h1 class="topbar-title">Reception Portal</h1>
+            
+            <div class="topbar-right">
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button class="topbar-btn topbar-btn-primary" type="submit">
+                        <i class="fa-solid fa-right-from-bracket"></i> Log Out
+                    </button>
+                </form>
+            </div>
+        </div>                 
+
+        <div class="content">
+            @yield('content')
+        </div>
     </main>
 </div>
 
@@ -521,6 +474,7 @@
         }
     }
 
+    // Close sidebar when clicking outside
     document.addEventListener('click', function(e) {
         const sidebar = document.getElementById('sidebar');
         const toggle = document.querySelector('.menu-toggle');
@@ -534,6 +488,7 @@
         }
     });
 
+    // Handle resize
     window.addEventListener('resize', function() {
         const sidebar = document.getElementById('sidebar');
         if (window.innerWidth > 1024) {

@@ -11,26 +11,36 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('attendance_logs', function (Blueprint $table) {
-    $table->id();
+        Schema::create('attendance_logs', function (Blueprint $table) {
+            $table->id();
 
-    $table->foreignId('user_id')
-        ->constrained()
-        ->cascadeOnDelete();
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-    $table->date('attendance_date');
+            $table->date('attendance_date');
 
-    $table->timestamp('clock_in_at')->nullable();
-    $table->timestamp('clock_out_at')->nullable();
+            $table->timestamp('clock_in_at')->nullable();
+            $table->timestamp('clock_out_at')->nullable();
 
-    $table->string('clock_in_ip')->nullable();
-    $table->string('clock_out_ip')->nullable();
+            $table->foreignId('clock_in_qr_token_id')
+                ->nullable()
+                ->constrained('attendance_qr_tokens')
+                ->nullOnDelete();
 
-    $table->enum('status', ['clocked_in', 'clocked_out'])
-        ->default('clocked_in');
+            $table->foreignId('clock_out_qr_token_id')
+                ->nullable()
+                ->constrained('attendance_qr_tokens')
+                ->nullOnDelete();
 
-    $table->timestamps();
-});
+            $table->boolean('manager_alert_sent')
+                ->default(false);
+
+            $table->enum('status', ['clocked_in', 'clocked_out'])
+                ->default('clocked_in');
+
+            $table->timestamps();
+        });
     }
 
     /**

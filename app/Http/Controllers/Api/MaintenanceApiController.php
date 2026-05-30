@@ -9,6 +9,7 @@ use App\Models\MaintenanceJob;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class MaintenanceApiController extends Controller
@@ -91,8 +92,16 @@ class MaintenanceApiController extends Controller
                     ->whereNotNull('email')
                     ->get();
 
-                foreach ($departmentUsers as $user) {
-                    Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
+                // foreach ($departmentUsers as $user) {
+                //     Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
+                // }
+
+                try {
+                    foreach ($departmentUsers as $user) {
+                        Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Maintenance email failed: ' . $e->getMessage());
                 }
 
         return response()->json([
