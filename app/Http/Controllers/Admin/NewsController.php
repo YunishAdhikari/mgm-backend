@@ -11,7 +11,7 @@ class NewsController extends Controller
 {
     public function create()
     {
-        return view('dashboard.admin.news.add');
+        return view('dashboard.admin.News.add');
     }
 
     public function store(Request $request)

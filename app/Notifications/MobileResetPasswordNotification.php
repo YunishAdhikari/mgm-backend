@@ -30,9 +30,12 @@ class MobileResetPasswordNotification extends Notification
 
         return (new MailMessage)
             ->subject('Reset Your MGM Ops Password')
-            ->greeting('Hello,')
-            ->line('You are receiving this email because we received a password reset request for your account.')
-            ->action('Reset Password in App', $url)
-            ->line('If you did not request this, you can safely ignore this email.');
+            ->greeting('Hello ' . ($notifiable->name ?? 'Team Member') . ',')
+            ->line('We received a request to reset the password for your MGM Ops account.')
+            ->line('Please tap the button below to open the MGM Ops app and create a new password.')
+            ->action('Reset Password in MGM Ops App', $url)
+            ->line('This reset link is valid for a limited time only.')
+            ->line('If you did not request a password reset, no further action is required.')
+            ->salutation('Regards, MGM Ops Team');
     }
 }

@@ -32,6 +32,7 @@ return new class extends Migration
     $table->enum('status', ['pending', 'in_progress', 'resolved', 'closed'])->default('pending');
 
     $table->foreignId('handled_by')->nullable()->constrained('users')->nullOnDelete();
+    $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
     $table->text('internal_note')->nullable();
 
     $table->timestamps();

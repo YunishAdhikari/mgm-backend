@@ -37,4 +37,11 @@ class Complaint extends Model
 
         return asset('uploads/complaints/' . $this->image);
     }
+
+    public function creator()
+{
+    return $this->belongsTo(User::class, 'created_by');
+}
+
+
 }

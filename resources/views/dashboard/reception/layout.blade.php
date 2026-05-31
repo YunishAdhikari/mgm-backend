@@ -435,6 +435,16 @@
                     <span class="nav-icon"><i class="fa-solid fa-screwdriver-wrench"></i></span>
                     <span>Maintenance</span>
                 </a>
+
+                <a href="{{ route('reception.restaurant.bookings.list') }}" class="nav-link">
+                        <i class="fa-solid fa-list"></i>
+                        <span>Booking List</span>
+                    </a>
+
+                <a href="{{ route('reception.restaurant.bookings.report') }}" class="nav-link">
+                    <i class="fa-solid fa-chart-column"></i>
+                    <span>Restaurant Report</span>
+                </a>
             </div>
         </nav>
     </aside>

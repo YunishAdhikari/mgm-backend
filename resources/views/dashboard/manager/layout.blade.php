@@ -273,8 +273,10 @@
             <i class="fas fa-clock"></i> Attendance
         </a>
         <!-- FIXED: class="manager-menu" -->
-        <a href="{{ route('manager.attendance.monthly.form') }}" class="manager-menu {{ request()->routeIs('manager.attendance.monthly.form') ? 'active' : '' }}">
-            <i class="fas fa-file-pdf"></i> Attendance Report
+        
+
+        <a href="{{ route('manager.reports.index') }}" class="manager-menu {{ request()->routeIs('manager.reports.index') ? 'active' : '' }}">
+            <i class="fas fa-file-pdf"></i> Report
         </a>
     </aside>
 

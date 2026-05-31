@@ -60,9 +60,9 @@ class ComplaintController extends Controller
 
     public function index()
     {
-        $complaints = Complaint::with('handler')
-            ->latest()
-            ->get();
+         $complaints = Complaint::with(['creator', 'handler'])
+        ->latest()
+        ->get();
 
         return view('dashboard.admin.complaints.index', compact('complaints'));
     }

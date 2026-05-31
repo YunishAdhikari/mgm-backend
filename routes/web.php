@@ -168,6 +168,9 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     // Reports
     Route::get('/manager/reports/holiday-pdf', [ManagerReportController::class, 'holidayReportForm'])->name('manager.reports.holiday.form');
     Route::post('/manager/reports/holiday-pdf', [ManagerReportController::class, 'generateHolidayPdf'])->name('manager.reports.holiday.generate');
+    Route::get('/manager/reports', [ManagerReportController::class, 'index'])->name('manager.reports.index');
+    Route::get('/manager/reports/maintenance', [ManagerReportController::class, 'maintenanceReport'])->name('manager.reports.maintenance');
+    Route::get('/manager/reports/maintenance/pdf',[ManagerReportController::class, 'maintenancePdf'])->name('manager.reports.maintenance.pdf');
 
     // Rota Management
     Route::get('/manager/rota', [RotaController::class, 'index'])->name('manager.rota.index');
@@ -213,6 +216,18 @@ Route::middleware(['auth', 'department:reception,front-office'])->prefix('recept
         Route::get('/restaurant-bookings/{type}/slots', [RestaurantBookingController::class, 'slots'])->name('restaurant.bookings.slots');
         Route::get('/restaurant-bookings/{type}/slots/{slotStart}/{slotEnd}/create', [RestaurantBookingController::class, 'create'])->name('restaurant.bookings.create');
         Route::post('/restaurant-bookings/store', [RestaurantBookingController::class, 'store'])->name('restaurant.bookings.store');
+
+        //report
+        Route::get('/restaurant-bookings/report', [RestaurantBookingController::class, 'report'])->name('restaurant.bookings.report');
+        Route::get('/restaurant-bookings/report/pdf', [RestaurantBookingController::class, 'reportPdf'])->name('restaurant.bookings.report.pdf');
+        Route::get('/restaurant-bookings/list', [RestaurantBookingController::class, 'list'])->name('restaurant.bookings.list');
+
+        //crud
+        Route::get('/restaurant-bookings/{booking}', [RestaurantBookingController::class, 'show'])->name('restaurant.bookings.show');
+        Route::get('/restaurant-bookings/{booking}/edit', [RestaurantBookingController::class, 'edit'])->name('restaurant.bookings.edit');
+        Route::put('/restaurant-bookings/{booking}', [RestaurantBookingController::class, 'update'])->name('restaurant.bookings.update');
+        Route::patch('/restaurant-bookings/{booking}/cancel', [RestaurantBookingController::class, 'cancel'])->name('restaurant.bookings.cancel');
+        
     });
 
 

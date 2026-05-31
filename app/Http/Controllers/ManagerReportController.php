@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\HolidayRequest;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\MaintenanceJob;
 
 class ManagerReportController extends Controller
 {
@@ -23,12 +24,6 @@ class ManagerReportController extends Controller
 
     public function generateHolidayPdf(Request $request)
     {
-        // $request->validate([
-        //     'year' => 'required|digits:4',
-        //     'employee_id' => 'nullable|exists:users,id',
-            
-        // ]);
-
         $request->validate([
             'year' => 'required|digits:4',
             'month' => 'nullable|integer|min:1|max:12',
@@ -62,10 +57,6 @@ class ManagerReportController extends Controller
 
         $employees = $query->orderBy('name')->get();
 
-        // $pdf = Pdf::loadView('dashboard.manager.reports.holiday-pdf', [
-        //     'employees' => $employees,
-        //     'year' => $request->year,
-        // ])->setPaper('a4', 'landscape');
         $pdf = Pdf::loadView('dashboard.manager.reports.holiday-pdf', [
             'employees' => $employees,
             'year' => $request->year,
@@ -89,6 +80,88 @@ $pdf = Pdf::loadView('dashboard.manager.reports.holiday-pdf', [
         $fileName .= '.pdf';
 
         return $pdf->download($fileName);
-        // return $pdf->download('holiday-request-report-' . $request->year . '.pdf');
     }
+
+
+public function index()
+{
+    return view('dashboard.manager.reports.index');
+}
+
+//Maintanance report for manager
+public function maintenanceReport(Request $request)
+{
+    $query = MaintenanceJob::with(['reporter', 'assignedUser', 'department']);
+
+    if ($request->filled('date_from')) {
+        $query->whereDate('created_at', '>=', $request->date_from);
+    }
+
+    if ($request->filled('date_to')) {
+        $query->whereDate('created_at', '<=', $request->date_to);
+    }
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('priority')) {
+        $query->where('priority', $request->priority);
+    }
+
+    $jobs = $query->latest()->get();
+
+    $totalJobs = $jobs->count();
+    $pendingJobs = $jobs->where('status', 'pending')->count();
+    $inProgressJobs = $jobs->where('status', 'in_progress')->count();
+    $completedJobs = $jobs->where('status', 'completed')->count();
+    $urgentJobs = $jobs->where('priority', 'urgent')->count();
+
+    return view('dashboard.manager.reports.maintenance', compact(
+        'jobs',
+        'totalJobs',
+        'pendingJobs',
+        'inProgressJobs',
+        'completedJobs',
+        'urgentJobs'
+    ));
+}
+
+
+//maintanance report pdf
+
+public function maintenancePdf(Request $request)
+{
+    $query = MaintenanceJob::with([
+        'reportedBy',
+        'assignedTo',
+        'department'
+    ]);
+
+    if ($request->filled('date_from')) {
+        $query->whereDate('created_at', '>=', $request->date_from);
+    }
+
+    if ($request->filled('date_to')) {
+        $query->whereDate('created_at', '<=', $request->date_to);
+    }
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('priority')) {
+        $query->where('priority', $request->priority);
+    }
+
+    $jobs = $query->latest()->get();
+
+    $pdf = Pdf::loadView(
+        'dashboard.manager.reports.pdf.maintenance',
+        compact('jobs')
+    );
+
+    return $pdf->download('maintenance-report.pdf');
+}
+
 }

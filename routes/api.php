@@ -62,6 +62,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //attendance
 
+    //guest complain
+    Route::post('/complaints/staff-submit',[ComplaintApiController::class, 'staffSubmit']);
+
 // Route::get('/attendance/status', [AttendanceApiController::class, 'status']);
 // Route::post('/attendance/clock-in', [AttendanceApiController::class, 'clockIn']);
 // Route::post('/attendance/clock-out', [AttendanceApiController::class, 'clockOut']);
