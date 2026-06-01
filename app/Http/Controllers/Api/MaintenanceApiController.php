@@ -89,14 +89,44 @@ class MaintenanceApiController extends Controller
     'reported_date' => now()->toDateString(),
 ]);
 
-$departmentUsers = User::where('department_id', $job->department_id)
-    ->whereNotNull('email')
-    ->get();
+$departmentNames = [
+    'Maintenance',
+    'Reception',
+    'Front Office',
+];
+
+$departmentIds = \App\Models\Department::whereIn('name', $departmentNames)
+    ->pluck('id')
+    ->toArray();
+
+$departmentIds[] = $job->department_id;
+
+$departmentIds = array_unique($departmentIds);
+
+$recipients = User::whereNotNull('email')
+    ->where(function ($query) use ($departmentIds) {
+        $query->whereIn('department_id', $departmentIds)
+            ->orWhereHas('role', function ($roleQuery) {
+                $roleQuery->whereIn('name', [
+                    'Manager',
+                    'manager',
+                    'Department Manager',
+                    'department manager',
+                ])
+                ->orWhereIn('slug', [
+                    'manager',
+                    'department-manager',
+                ]);
+            });
+    })
+    ->get()
+    ->unique('email')
+    ->values();
 
 $emailSentCount = 0;
 
 try {
-    foreach ($departmentUsers as $user) {
+    foreach ($recipients as $user) {
         Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
         $emailSentCount++;
     }
@@ -107,16 +137,10 @@ try {
         'success' => true,
         'message' => 'Maintenance task added, but email notification failed.',
         'email_error' => $e->getMessage(),
+        'emails_attempted' => $emailSentCount,
         'job' => $job,
     ], 201);
 }
-
-return response()->json([
-    'success' => true,
-    'message' => 'Maintenance task added successfully.',
-    'emails_sent' => $emailSentCount,
-    'job' => $job,
-], 201);
     }
 
     public function show(Request $request, $id)
