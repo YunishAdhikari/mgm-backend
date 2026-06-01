@@ -58,6 +58,16 @@ Route::get('/mobile-reset-password', function (\Illuminate\Http\Request $request
     ]);
 })->name('mobile.reset.password.redirect');
 
+//web password reset
+use Illuminate\Http\Request;
+
+Route::get('/reset-password', function (Request $request) {
+    return view('auth.web-reset-password', [
+        'token' => $request->token,
+        'email' => $request->email,
+    ]);
+})->name('password.reset.web');
+
 // --- AUTHENTICATED ROUTES (General) ---
 // Only logged-in users can edit their own profile
 Route::middleware('auth')->group(function () {
