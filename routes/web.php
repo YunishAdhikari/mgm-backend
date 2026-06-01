@@ -50,6 +50,14 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/guest/complaint', [ComplaintController::class, 'publicForm'])->name('guest.complaint.form');
 Route::post('/guest/complaint/store', [ComplaintController::class, 'store'])->name('guest.complaint.store');
 
+//Mobile reset password
+Route::get('/mobile-reset-password', function (\Illuminate\Http\Request $request) {
+    return view('auth.mobile-reset-password-redirect', [
+        'token' => $request->token,
+        'email' => $request->email,
+    ]);
+})->name('mobile.reset.password.redirect');
+
 // --- AUTHENTICATED ROUTES (General) ---
 // Only logged-in users can edit their own profile
 Route::middleware('auth')->group(function () {
