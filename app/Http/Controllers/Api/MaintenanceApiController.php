@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\MaintenanceAssignedMail;
 use App\Mail\MaintenanceCompletedMail;
+use App\Models\Department;
 use App\Models\MaintenanceJob;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -89,57 +90,48 @@ class MaintenanceApiController extends Controller
     'reported_date' => now()->toDateString(),
 ]);
 
-$departmentNames = [
-    'Maintenance',
-    'Reception',
-    'Front Office',
-];
-
-$departmentIds = \App\Models\Department::whereIn('name', $departmentNames)
-    ->pluck('id')
-    ->toArray();
-
-$departmentIds[] = $job->department_id;
-
-$departmentIds = array_unique($departmentIds);
-
-$recipients = User::whereNotNull('email')
-    ->where(function ($query) use ($departmentIds) {
-        $query->whereIn('department_id', $departmentIds)
-            ->orWhereHas('role', function ($roleQuery) {
-                $roleQuery->whereIn('name', [
-                    'Manager',
-                    'manager',
-                    'Department Manager',
-                    'department manager',
-                ])
-                ->orWhereIn('slug', [
-                    'manager',
-                    'department-manager',
-                ]);
-            });
-    })
-    ->get()
-    ->unique('email')
-    ->values();
-
-$emailSentCount = 0;
 
 try {
+    $departmentNames = [
+        'Maintenance',
+        'manager',
+        'Reception',
+    ];
+
+    $departmentIds = Department::whereIn('name', $departmentNames)
+        ->pluck('id')
+        ->toArray();
+
+    // Also include the department selected in the task
+    $departmentIds[] = $job->department_id;
+
+    $departmentIds = array_unique($departmentIds);
+
+    $recipients = User::whereNotNull('email')
+        ->where(function ($query) use ($departmentIds) {
+            $query->whereIn('department_id', $departmentIds)
+                ->orWhereHas('role', function ($roleQuery) {
+                    $roleQuery->whereIn('name', [
+                        'Manager',
+                        'manager',
+                        'Department Manager',
+                        'department manager',
+                    ]);
+                });
+        })
+        ->get()
+        ->unique('email')
+        ->values();
+
+    $emailSentCount = 0;
+
     foreach ($recipients as $user) {
         Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
         $emailSentCount++;
     }
-} catch (\Exception $e) {
-    Log::error('Maintenance email failed: ' . $e->getMessage());
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Maintenance task added, but email notification failed.',
-        'email_error' => $e->getMessage(),
-        'emails_attempted' => $emailSentCount,
-        'job' => $job,
-    ], 201);
+} catch (\Throwable $e) {
+    Log::error('Maintenance email failed: ' . $e->getMessage());
 }
     }
 
