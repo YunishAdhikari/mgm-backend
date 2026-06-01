@@ -76,39 +76,47 @@ class MaintenanceApiController extends Controller
         }
 
         $job = MaintenanceJob::create([
-            'reported_by' => Auth::id(),
-            'department_id' => $request->department_id,
-            'assigned_to' => $request->assigned_to,
-            'title' => $request->title,
-            'description' => $request->description,
-            'location' => $request->location,
-            'room_number' => $request->room_number,
-            'image' => $imageName,
-            'priority' => $request->priority,
-            'status' => 'pending',
-            'reported_date' => now()->toDateString(),
-        ]);
-        $departmentUsers = User::where('department_id', $job->department_id)
-                    ->whereNotNull('email')
-                    ->get();
+    'reported_by' => Auth::id(),
+    'department_id' => $request->department_id,
+    'assigned_to' => $request->assigned_to,
+    'title' => $request->title,
+    'description' => $request->description,
+    'location' => $request->location,
+    'room_number' => $request->room_number,
+    'image' => $imageName,
+    'priority' => $request->priority,
+    'status' => 'pending',
+    'reported_date' => now()->toDateString(),
+]);
 
-                // foreach ($departmentUsers as $user) {
-                //     Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
-                // }
+$departmentUsers = User::where('department_id', $job->department_id)
+    ->whereNotNull('email')
+    ->get();
 
-                try {
-                    foreach ($departmentUsers as $user) {
-                        Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
-                    }
-                } catch (\Exception $e) {
-                    Log::error('Maintenance email failed: ' . $e->getMessage());
-                }
+$emailSentCount = 0;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Maintenance task added successfully.',
-            'job' => $job,
-        ], 201);
+try {
+    foreach ($departmentUsers as $user) {
+        Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
+        $emailSentCount++;
+    }
+} catch (\Exception $e) {
+    Log::error('Maintenance email failed: ' . $e->getMessage());
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Maintenance task added, but email notification failed.',
+        'email_error' => $e->getMessage(),
+        'job' => $job,
+    ], 201);
+}
+
+return response()->json([
+    'success' => true,
+    'message' => 'Maintenance task added successfully.',
+    'emails_sent' => $emailSentCount,
+    'job' => $job,
+], 201);
     }
 
     public function show(Request $request, $id)
