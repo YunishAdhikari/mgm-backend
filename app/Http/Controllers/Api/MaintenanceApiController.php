@@ -133,6 +133,12 @@ try {
 } catch (\Throwable $e) {
     Log::error('Maintenance email failed: ' . $e->getMessage());
 }
+return response()->json([
+    'success' => true,
+    'message' => 'Maintenance task added successfully.',
+    'emails_sent' => $emailSentCount ?? 0,
+    'job' => $job,
+], 201);
     }
 
     public function show(Request $request, $id)
