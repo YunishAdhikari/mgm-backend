@@ -3,19 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reception Dashboard</title>
+    <title>@yield('title', 'Reception Dashboard') - MGRH</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    
-    <style>
+  @yield('styles')
+
+<style>
         :root {
-            --primary: #8b5cf6;
-            --primary-hover: #a78bfa;
-            --secondary: #ec4899;
-            --accent: #06b6d4;
+            /* ============ RED THEME ============ */
+            --primary: #ef4444;
+            --primary-hover: #f87171;
+            --primary-light: #fca5a5;
+            --secondary: #dc2626;
+            
+            --accent: #fbbf24;
+            --accent-glow: 0 0 20px rgba(251, 191, 36, 0.3);
             
             --bg-dark: #09090b;
             --bg-sidebar: #18181b;
@@ -34,8 +39,8 @@
             --danger: #ef4444;
             --info: #3b82f6;
             
-            --glow: 0 0 20px rgba(139, 92, 246, 0.3);
-            --glow-accent: 0 0 20px rgba(236, 72, 153, 0.3);
+            --glow: 0 0 20px rgba(239, 68, 68, 0.3);
+            --glow-accent: 0 0 20px rgba(251, 191, 36, 0.3);
             
             --radius-lg: 1.5rem;
             --radius-md: 1rem;
@@ -59,8 +64,8 @@
             display: flex;
             min-height: 100vh;
             background: 
-                radial-gradient(ellipse at 10% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 90% 80%, rgba(236, 72, 153, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 10% 20%, rgba(239, 68, 68, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 80%, rgba(220, 38, 38, 0.06) 0%, transparent 50%),
                 var(--bg-dark);
         }
 
@@ -75,6 +80,7 @@
             height: 100vh;
             padding: 24px 16px;
             transition: transform 0.3s ease;
+            z-index: 100;
         }
 
         .sidebar::before {
@@ -83,13 +89,13 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 200px;
-            background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);
+            height: 250px;
+            background: linear-gradient(180deg, rgba(239, 68, 68, 0.12) 0%, transparent 100%);
             pointer-events: none;
         }
 
         .sidebar-header {
-            padding: 0 12px 24px;
+            padding: 0 12px 32px;
             position: relative;
             z-index: 1;
         }
@@ -101,24 +107,31 @@
         }
 
         .logo-icon {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border-radius: 12px;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 22px;
             color: white;
             box-shadow: var(--glow);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
         }
 
         .logo-text {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 800;
-            background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
+            background: linear-gradient(135deg, #fff 0%, #fca5a5 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
         }
 
         .sidebar-nav {
@@ -137,9 +150,9 @@
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
             color: var(--text-dim);
-            padding: 24px 12px 10px;
+            padding: 20px 12px 12px;
         }
 
         .nav-link {
@@ -155,13 +168,14 @@
             transition: all 0.25s ease;
             position: relative;
             overflow: hidden;
+            margin-bottom: 4px;
         }
 
         .nav-link::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
+            background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.08), transparent);
             transform: translateX(-100%);
             transition: transform 0.5s ease;
         }
@@ -176,20 +190,31 @@
         }
 
         .nav-link.active {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.1));
-            color: var(--primary-hover);
-            border: 1px solid rgba(139, 92, 246, 0.3);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(185, 28, 28, 0.1));
+            color: var(--primary-light);
+            border: 1px solid rgba(239, 68, 68, 0.25);
             box-shadow: var(--glow);
         }
 
-        .nav-icon {
-            width: 20px;
-            text-align: center;
-            font-size: 18px;
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 24px;
+            background: linear-gradient(180deg, var(--primary), #b91c1c);
+            border-radius: 3px;
         }
 
-        .nav-link.active .nav-icon {
-            color: var(--primary-hover);
+        .nav-icon {
+            width: 22px;
+            text-align: center;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* ============ MAIN ============ */
@@ -211,20 +236,35 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            backdrop-filter: blur(10px);
         }
 
         .topbar-title {
-            font-size: 24px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .topbar-title-icon {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
         }
 
         .topbar-right {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
         }
 
         .topbar-btn {
@@ -242,13 +282,64 @@
         }
 
         .topbar-btn-primary {
-            background: linear-gradient(135deg, var(--danger), #b91c1c);
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
             color: white;
+            box-shadow: 0 4px 12px rgba(185, 28, 28, 0.25);
         }
 
         .topbar-btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            box-shadow: 0 6px 20px rgba(185, 28, 28, 0.35);
+        }
+
+        .topbar-btn-secondary {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .topbar-btn-secondary:hover {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border-color: var(--border-light);
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary) 0%, #b91c1c 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--text-dim);
         }
 
         .content {
@@ -286,12 +377,18 @@
             cursor: pointer;
             font-size: 20px;
             color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            background: var(--bg-input);
+            border-color: var(--border-light);
         }
 
         .mobile-logo {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 800;
-            background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
+            background: linear-gradient(135deg, #fff 0%, #fca5a5 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -300,9 +397,10 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.75);
             z-index: 99;
             backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease;
         }
 
         /* ============ RESPONSIVE ============ */
@@ -332,12 +430,17 @@
             .topbar {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 12px;
+                gap: 16px;
                 padding: 16px 20px;
             }
 
-            .topbar-btn {
+            .topbar-right {
                 width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .topbar-btn {
+                flex: 1;
                 justify-content: center;
             }
 
@@ -352,16 +455,16 @@
 
         /* ============ SCROLLBAR ============ */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
+            background: transparent;
         }
 
         ::-webkit-scrollbar-thumb {
             background: var(--border);
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -370,9 +473,14 @@
 
         /* ============ ANIMATIONS ============ */
         @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -381,9 +489,11 @@
         }
 
         .content {
-            animation: fadeIn 0.4s ease-out;
+            animation: slideUp 0.5s ease-out;
         }
     </style>
+    
+    @yield('extra_styles')
 </head>
 <body>
 
@@ -394,7 +504,7 @@
             <button class="menu-toggle" onclick="toggleSidebar()">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <div class="mobile-logo">MGRH Reception</div>
+            <div class="mobile-logo">MGRH</div>
             <div style="width: 44px;"></div>
         </div>
     </div>
@@ -408,7 +518,7 @@
                 <div class="logo-icon">
                     <i class="fa-solid fa-hotel"></i>
                 </div>
-                <div class="logo-text">MGRH </div>
+                <div class="logo-text">MGRH</div>
             </div>
         </div>
 
@@ -437,13 +547,18 @@
                 </a>
 
                 <a href="{{ route('reception.restaurant.bookings.list') }}" class="nav-link">
-                        <i class="fa-solid fa-list"></i>
-                        <span>Booking List</span>
-                    </a>
+                    <span class="nav-icon"><i class="fa-solid fa-list"></i></span>
+                    <span>Booking List</span>
+                </a>
 
                 <a href="{{ route('reception.restaurant.bookings.report') }}" class="nav-link">
-                    <i class="fa-solid fa-chart-column"></i>
+                    <span class="nav-icon"><i class="fa-solid fa-chart-column"></i></span>
                     <span>Restaurant Report</span>
+                </a>
+
+                <a href="{{ route('reception.room-status.index') }}" class="nav-link">
+                    <span class="nav-icon"><i class="fa-solid fa-broom"></i></span>
+                    <span>Housekeeping</span>
                 </a>
             </div>
         </nav>
@@ -451,9 +566,22 @@
 
     <main class="main">
         <div class="topbar">
-            <h1 class="topbar-title">Reception Portal</h1>
+            <div class="topbar-title">
+                <span class="topbar-title-icon"></span>
+                @yield('page_title', 'Dashboard')
+            </div>
             
             <div class="topbar-right">
+                <div class="user-badge">
+                    <div class="user-avatar">
+                        {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name">{{ Auth::user()->name ?? 'User' }}</span>
+                        <span class="user-role">Receptionist</span>
+                    </div>
+                </div>
+                
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button class="topbar-btn topbar-btn-primary" type="submit">
@@ -507,7 +635,16 @@
             document.body.style.overflow = '';
         }
     });
+
+    // Active link indicator
+    document.querySelectorAll('.nav-link').forEach(link => {
+        if (link.classList.contains('active')) {
+            link.style.position = 'relative';
+        }
+    });
 </script>
+
+@yield('scripts')
 
 </body>
 </html>

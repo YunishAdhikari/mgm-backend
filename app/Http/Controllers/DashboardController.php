@@ -71,6 +71,20 @@ class DashboardController extends Controller
             return redirect()->route('kitchen.supervisor.dashboard');
         }
 
+
+        // Housekeeping Supervisor
+            if (
+                in_array($departmentSlug, ['housekeeping', 'hk', 'house-keeping']) ||
+                in_array($departmentName, ['housekeeping', 'hk', 'house keeping'])
+            ) {
+                if (
+                    in_array($roleSlug, ['supervisor', 'housekeeping-supervisor', 'hk-supervisor']) ||
+                    in_array($roleName, ['supervisor', 'housekeeping supervisor', 'hk supervisor'])
+                ) {
+                    return redirect()->route('housekeeping-supervisor.dashboard');
+                }
+            }
+
         // General Supervisor
         if ($roleSlug === 'supervisor' || $roleName === 'supervisor') {
             return redirect()->route('supervisor.dashboard');

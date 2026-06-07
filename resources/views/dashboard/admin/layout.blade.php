@@ -827,6 +827,10 @@
           </div>
         </a>
 
+
+         
+      
+
         {{-- <a href="" class="menu-item">
           <div class="left">
             <i class="fas fa-users"></i>
@@ -834,6 +838,25 @@
           </div>
         </a> --}}
       </div>
+
+       <div class="menu-section">
+        <div class="menu-title">Room Management </div>
+         <a href="{{ route('admin.room-types.index') }}" class="menu-item {{ request()->routeIs('admin.room-types.index') ? 'active' : '' }}">
+          <div class="left">  
+            <i class="fas fa-bed"></i>
+             <span> Room Types</span>
+              </div>
+          </a>
+
+          <a href="{{ route('rooms.index') }}" class="menu-item {{ request()->routeIs('rooms.index') ? 'active' : '' }}">
+          <div class="left">  
+            <i class="fas fa-bed"></i>
+             <span>Rooms</span>
+              </div>
+          </a>
+        </div>
+
+
     </aside>
 
     <!-- Main Wrapper -->

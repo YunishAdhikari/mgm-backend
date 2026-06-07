@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ComplaintApiController;
 use App\Http\Controllers\Api\KitchenInventoryApiController;
 use App\Http\Controllers\Api\KitchenMobileController;
 use App\Http\Controllers\Api\AttendanceApiController;
+use App\Http\Controllers\Api\HousekeepingStaffApiController;
 use App\Http\Controllers\Api\PasswordResetApiController;
 
 Route::post('/reset-password',[PasswordResetApiController::class, 'reset']);
@@ -71,6 +72,19 @@ Route::middleware('auth:sanctum')->group(function () {
 // Route::get('/attendance/history', [AttendanceApiController::class, 'history']);
 Route::post('/attendance/scan-qr', [AttendanceApiController::class, 'scanQr']);
 
+Route::get('hk/my-rooms', [HousekeepingStaffApiController::class, 'myRooms']);
+
+    Route::post('hk/rooms/{allocation}/start', [HousekeepingStaffApiController::class, 'startCleaning']);
+    Route::post('hk/rooms/{allocation}/cleaned', [HousekeepingStaffApiController::class, 'markCleaned']);
+    Route::post('hk/rooms/{allocation}/dnd', [HousekeepingStaffApiController::class, 'markDnd']);
+    Route::post('hk/rooms/{allocation}/refused', [HousekeepingStaffApiController::class, 'markRefused']);
+
+    Route::post('hk/rooms/{allocation}/maintenance', [HousekeepingStaffApiController::class, 'markMaintenance']);
+    Route::get('hk/supervisor/progress', [HousekeepingStaffApiController::class, 'supervisorProgress']);
+
+    Route::get('hk/supervisor/inspection', [HousekeepingStaffApiController::class, 'inspectionQueue']);
+    Route::post('hk/supervisor/inspection/{allocation}/approve', [HousekeepingStaffApiController::class, 'approveInspection']);
+    Route::post('hk/supervisor/inspection/{allocation}/reject', [HousekeepingStaffApiController::class, 'rejectInspection']);
 
 
 Route::get('/departments', function () {

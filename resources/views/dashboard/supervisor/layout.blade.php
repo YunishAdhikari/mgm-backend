@@ -484,6 +484,11 @@
                 <span>Floor Plan</span>
             </a>
         @endif
+
+        {{-- <a href="{{ route('housekeeping.board.index') }}" class="nav-link">
+            <i class="fa-solid fa-broom"></i>
+            <span>Housekeeping Board</span>
+        </a> --}}
     </aside>
 
     <main class="main-content">
