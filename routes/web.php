@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\MaintenanceController;
+use App\Http\Controllers\Admin\MobileAppVersionController;
 use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\Admin\RoomTypeController;
@@ -39,6 +40,7 @@ use App\Http\Controllers\RotaController;
 use App\Http\Controllers\SopController;
 use App\Http\Controllers\SupervisorController;
 use App\Http\Controllers\UserController;
+use App\Models\MobileAppVersion;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -71,6 +73,15 @@ use Illuminate\Http\Request;
             'email' => $request->email,
         ]);
     })->name('password.reset.web');
+
+    Route::get('/staff-app', function () {
+    $latestVersion = MobileAppVersion::where('platform', 'android')
+        ->where('is_latest', true)
+        ->latest()
+        ->first();
+
+    return view('staff-app.download', compact('latestVersion'));
+});
 
     // --- AUTHENTICATED ROUTES (General) ---
     // Only logged-in users can edit their own profile
@@ -129,6 +140,13 @@ use Illuminate\Http\Request;
         Route::post('/admin/room-types/store', [RoomTypeController::class, 'store'])->name('admin.room-types.store');
         Route::put('/admin/room-types/{roomType}/update', [RoomTypeController::class, 'update'])->name('admin.room-types.update');
         Route::delete('/admin/room-types/{roomType}/delete', [RoomTypeController::class, 'destroy'])->name('admin.room-types.destroy');
+
+        //Mobile app update android
+        Route::get('/mobile-app-versions', [MobileAppVersionController::class, 'index'])->name('mobile-app-versions.index');
+        Route::get('/mobile-app-versions/create', [MobileAppVersionController::class, 'create'])->name('mobile-app-versions.create');
+        Route::post('/mobile-app-versions', [MobileAppVersionController::class, 'store'])->name('mobile-app-versions.store');
+        Route::patch('/mobile-app-versions/{version}/mark-latest', [MobileAppVersionController::class, 'markLatest'])->name('mobile-app-versions.mark-latest');
+        Route::delete('/mobile-app-versions/{version}', [MobileAppVersionController::class, 'destroy'])->name('mobile-app-versions.destroy');
     });
 
     // --- KITCHEN SUPERVISOR ROUTES ---

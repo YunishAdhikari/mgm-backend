@@ -760,6 +760,12 @@
           </div>
         </a>
 
+        <a href="{{ route('mobile-app-versions.index') }}" class="menu-item">
+          <div class="left">
+              Mobile App Versions
+          </div>
+        </a>
+
         {{-- <a href="{{ route('admin.attendance.settings') }}" class="menu-item {{ request()->routeIs('admin.attendance.settings') ? 'active' : '' }}">
           <div class="left">
             <i class="fas fa-clock"></i>
