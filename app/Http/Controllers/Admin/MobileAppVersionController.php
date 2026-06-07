@@ -21,38 +21,35 @@ class MobileAppVersionController extends Controller
         return view('dashboard.admin.mobile-app-versions.create');
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'version_name' => 'required|string|max:50',
-            'version_code' => 'required|integer',
-            'apk_file' => 'required|file|mimes:apk|max:204800',
-            'release_notes' => 'nullable|string',
-            'is_latest' => 'nullable|boolean',
-        ]);
+   public function store(Request $request)
+{
+    $request->validate([
+        'version_name' => 'required|string|max:50',
+        'version_code' => 'required|integer',
+        'release_notes' => 'nullable|string',
+        'apk_url' => 'required|url',
+        'is_latest' => 'nullable|boolean',
+    ]);
 
-        $path = $request->file('apk_file')->store('mobile-apps', 'public');
-
-        if ($request->boolean('is_latest')) {
-            MobileAppVersion::where('platform', 'android')
-                ->update(['is_latest' => false]);
-        }
-
-        MobileAppVersion::create([
-            'platform' => 'android',
-            'version_name' => $request->version_name,
-            'version_code' => $request->version_code,
-            'apk_path' => $path,
-            'release_notes' => $request->release_notes,
-            'is_latest' => $request->boolean('is_latest'),
-            'uploaded_by' => auth()->id(),
-        ]);
-
-        return redirect()
-            ->route('admin.mobile-app-versions.index')
-            ->with('success', 'Mobile app version uploaded successfully.');
+    if ($request->boolean('is_latest')) {
+        MobileAppVersion::query()
+            ->update(['is_latest' => false]);
     }
 
+    MobileAppVersion::create([
+        'platform' => 'android',
+        'version_name' => $request->version_name,
+        'version_code' => $request->version_code,
+        'apk_url' => $request->apk_url,
+        'release_notes' => $request->release_notes,
+        'is_latest' => $request->boolean('is_latest'),
+        'uploaded_by' => auth()->id(),
+    ]);
+
+    return redirect()
+        ->route('mobile-app-versions.index')
+        ->with('success', 'Version uploaded successfully.');
+}
     public function markLatest(MobileAppVersion $version)
     {
         MobileAppVersion::where('platform', $version->platform)

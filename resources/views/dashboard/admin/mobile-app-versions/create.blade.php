@@ -48,20 +48,18 @@
                            required>
                 </div>
 
-                <div class="form-group">
-                    <label>APK File</label>
+                    <div class="form-group">
+                        <label>Google Drive APK Link</label>
 
-                    <label class="file-box">
-                        <input type="file"
-                               name="apk_file"
-                               accept=".apk"
-                               required>
+                        <input type="url"
+                            name="apk_url"
+                            placeholder="https://drive.google.com/..."
+                            required>
 
-                        <div class="file-icon">☁</div>
-                        <strong>Choose APK file</strong>
-                        <span>Upload the release APK generated from Flutter</span>
-                    </label>
-                </div>
+                        <small style="color:#a1a1aa;">
+                            Paste the Google Drive direct download link.
+                        </small>
+                    </div>
 
                 <div class="form-group">
                     <label>Release Notes</label>

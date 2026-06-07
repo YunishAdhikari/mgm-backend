@@ -348,7 +348,7 @@
                     </div>
                 @endif
 
-                <a class="download-btn" href="{{ asset('storage/' . $latestVersion->apk_path) }}">
+                <a class="download-btn" href="{{ $latestVersion->apk_url }}">
                     Download Latest APK
                 </a>
             @else

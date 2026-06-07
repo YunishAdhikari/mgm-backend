@@ -172,7 +172,7 @@
                         </div>
 
                         <div class="version-actions">
-                            <a href="{{ asset('storage/' . $version->apk_path) }}"
+                            <a href="{{ $version->apk_url }}"
                                target="_blank"
                                class="small-btn">
                                 <i class="fas fa-download"></i>
