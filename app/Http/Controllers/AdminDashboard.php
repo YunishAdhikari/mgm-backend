@@ -12,7 +12,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\EmployeeCredentialsMail;
+use App\Models\ActivityLog;
 use App\Models\MaintenanceJob;
+use App\Models\News;
 
 class AdminDashboard extends Controller
 {
@@ -21,17 +23,47 @@ public function dashboard()
 {
     $totalEmployees = User::count();
     $activeEmployees = User::where('status', 'active')->count();
+
     $openMaintenance = MaintenanceJob::where('status', '!=', 'completed')->count();
-    $activeNews = MaintenanceJob::where('status', 'active')->count();
     $pendingJobs = MaintenanceJob::where('status', 'pending')->count();
     $inProgressJobs = MaintenanceJob::where('status', 'in_progress')->count();
     $completedJobs = MaintenanceJob::where('status', 'completed')->count();
     $cancelledJobs = MaintenanceJob::where('status', 'cancelled')->count();
+
+    // If your News model exists, use this:
+    $activeNews = News::where('status', 'active')->count();
+
+
+    $statusChart = [
+    MaintenanceJob::where('status', 'pending')->count(),
+    MaintenanceJob::where('status', 'in_progress')->count(),
+    MaintenanceJob::where('status', 'completed')->count(),
+    MaintenanceJob::where('status', 'cancelled')->count(),
+];
+
+$priorityChart = [
+    MaintenanceJob::where('priority', 'low')->count(),
+    MaintenanceJob::where('priority', 'medium')->count(),
+    MaintenanceJob::where('priority', 'high')->count(),
+    MaintenanceJob::where('priority', 'urgent')->count(),
+];
+    // Temporary fallback if News model is not added here yet:
+    $activeNews = 0;
+
     $departmentData = Department::withCount('users')->get();
     $departmentNames = $departmentData->pluck('name');
     $departmentCounts = $departmentData->pluck('users_count');
 
+    $recentActivities = ActivityLog::with('user')
+        ->latest()
+        ->take(10)
+        ->get();
+
+    $totalActivitiesToday = ActivityLog::whereDate('created_at', today())->count();
+    $totalMaintenanceJobs = MaintenanceJob::count();
+
     return view('dashboard.admin.index', compact(
+        'recentActivities',
         'totalEmployees',
         'activeEmployees',
         'openMaintenance',
@@ -41,7 +73,11 @@ public function dashboard()
         'completedJobs',
         'cancelledJobs',
         'departmentNames',
-        'departmentCounts'
+        'departmentCounts',
+        'totalActivitiesToday',
+        'totalMaintenanceJobs',
+        'statusChart',
+        'priorityChart',
     ));
 }
 public function index(Request $request)
@@ -111,6 +147,11 @@ public function create()
         'department_id' => $request->department_id,
     ]);
 
+        logActivity(
+        'Created User',
+        'Admin',
+        'Created user: ' . $user->name
+    );
     Mail::to($user->email)
         ->send(new EmployeeCredentialsMail($user, $plainPassword));
 
@@ -124,6 +165,7 @@ public function create()
 
     $user->status = $user->status === 'active' ? 'inactive' : 'active';
     $user->save();
+    logActivity('Updated User', 'Admin', 'Updated employee details: ' . $user->name);
 
     return back()->with('success', 'Employee status updated successfully.');
 }
@@ -132,6 +174,7 @@ public function destroy($id)
 {
     $user = User::findOrFail($id);
     $user->delete();
+    logActivity('Deleted User', 'Admin', 'Deleted employee: ' . $user->name);
 
     return back()->with('success', 'Employee deleted successfully.');
 }

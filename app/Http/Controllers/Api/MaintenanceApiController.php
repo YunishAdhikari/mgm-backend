@@ -90,6 +90,12 @@ class MaintenanceApiController extends Controller
     'reported_date' => now()->toDateString(),
 ]);
 
+logActivity(
+    'Created Maintenance Job',
+    'Maintenance',
+    'New maintenance job reported for room ' . $request->room_number
+);
+
 
 try {
     $departmentNames = [
@@ -178,6 +184,7 @@ return response()->json([
         }
 
         $job->save();
+        logActivity('Changed Maintenance Status', 'Maintenance', 'Job status changed to ' . $job->status);
         if ($job->status === 'completed') {
 
                 $emails = User::where('department_id', $job->department_id)

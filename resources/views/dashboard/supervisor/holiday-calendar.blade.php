@@ -8,11 +8,7 @@
             <h1>Holiday Calendar</h1>
             <p>View approved and pending staff holidays in calendar format.</p>
         </div>
-        
-        <a href="{{ route('manager.reports.holiday.form') }}" class="pdf-btn">
-            <i class="fa-solid fa-file-pdf"></i>
-            Generate PDF
-        </a>
+    
     </div>
 
     <div class="legend">

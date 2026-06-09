@@ -192,7 +192,7 @@ public function index()
     ])->update([
         'status' => 'published'
     ]);
-
+    logActivity('Published Rota', 'Rota', ' rota published');
     return back()->with('success', 'Rota published successfully.');
 }
 

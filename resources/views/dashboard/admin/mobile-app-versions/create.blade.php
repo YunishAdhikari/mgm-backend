@@ -7,8 +7,8 @@
     <div class="upload-header">
         <div>
             <div class="eyebrow">Android Release</div>
-            <h1>Upload Android APK</h1>
-            <p>Upload a new MGM Ops build and make it available for staff download.</p>
+            <h1>Upload Android App Link</h1>
+            <p>Add a new MGM Ops Android build using a Google Drive APK download link.</p>
         </div>
 
         <a href="{{ route('mobile-app-versions.index') }}" class="back-btn">
@@ -27,45 +27,61 @@
     <div class="upload-grid">
 
         <div class="upload-card">
-            <form method="POST"
-                  action="{{ route('mobile-app-versions.store') }}"
-                  enctype="multipart/form-data">
+            <div class="card-title">
+                <div class="icon-box">
+                    <i class="fas fa-android"></i>
+                </div>
+                <div>
+                    <h2>New Android Version</h2>
+                    <p>Paste the latest APK link and publish it for staff.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('mobile-app-versions.store') }}">
                 @csrf
 
-                <div class="form-group">
-                    <label>Version Name</label>
-                    <input type="text"
-                           name="version_name"
-                           placeholder="Example: 1.0.1"
-                           required>
-                </div>
-
-                <div class="form-group">
-                    <label>Version Code</label>
-                    <input type="number"
-                           name="version_code"
-                           placeholder="Example: 14"
-                           required>
-                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Version Name</label>
+                        <input type="text"
+                               name="version_name"
+                               placeholder="Example: 1.0.1"
+                               value="{{ old('version_name') }}"
+                               required>
+                    </div>
 
                     <div class="form-group">
-                        <label>Google Drive APK Link</label>
-
-                        <input type="url"
-                            name="apk_url"
-                            placeholder="https://drive.google.com/..."
-                            required>
-
-                        <small style="color:#a1a1aa;">
-                            Paste the Google Drive direct download link.
-                        </small>
+                        <label>Version Code</label>
+                        <input type="number"
+                               name="version_code"
+                               placeholder="Example: 14"
+                               value="{{ old('version_code') }}"
+                               required>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Google Drive APK Direct Download Link</label>
+
+                    <div class="link-input-wrap">
+                        <i class="fas fa-link"></i>
+                        <input type="url"
+                               name="apk_url"
+                               placeholder="https://drive.google.com/uc?export=download&id=FILE_ID"
+                               value="{{ old('apk_url') }}"
+                               required>
+                    </div>
+
+                    <small>
+                        Use the direct download format, not the normal Drive preview link.
+                    </small>
+                </div>
 
                 <div class="form-group">
                     <label>Release Notes</label>
                     <textarea name="release_notes"
                               rows="5"
-                              placeholder="Example: Added housekeeping inspection, rota view, and dashboard improvements."></textarea>
+                              placeholder="Example: Added housekeeping inspection, rota view, dashboard improvements and bug fixes.">{{ old('release_notes') }}</textarea>
                 </div>
 
                 <label class="latest-box">
@@ -76,24 +92,26 @@
 
                     <div>
                         <strong>Mark as latest version</strong>
-                        <span>This APK will be shown on the staff download page.</span>
+                        <span>This version will appear on the public staff download page.</span>
                     </div>
                 </label>
 
                 <button type="submit" class="upload-btn">
-                    Upload APK
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Save App Version
                 </button>
             </form>
         </div>
 
         <div class="info-card">
-            <h3>Before Uploading</h3>
+            <h3>Before Saving</h3>
 
             <div class="check-item">
                 <span>1</span>
                 <div>
                     <strong>Build release APK</strong>
-                    <p>Use <code>flutter build apk --release</code>.</p>
+                    <p>Generate the Android release APK from Flutter.</p>
+                    <div class="command-box">flutter build apk --release</div>
                 </div>
             </div>
 
@@ -101,7 +119,8 @@
                 <span>2</span>
                 <div>
                     <strong>Update version number</strong>
-                    <p>Example: <code>version: 1.0.1+14</code>.</p>
+                    <p>Increase the version in your Flutter project before building.</p>
+                    <div class="command-box">version: 1.0.1+14</div>
                 </div>
             </div>
 
@@ -109,12 +128,28 @@
                 <span>3</span>
                 <div>
                     <strong>Use production API</strong>
-                    <p>Confirm app points to <code>https://mgmglasgow.com/api</code>.</p>
+                    <p>Make sure the app connects to the live MGM Ops API.</p>
+                    <div class="command-box">https://mgmglasgow.com/api</div>
+                </div>
+            </div>
+
+            <div class="check-item">
+                <span>4</span>
+                <div>
+                    <strong>Convert Google Drive link</strong>
+                    <p>Use the file ID from your Drive share link.</p>
+                    <div class="drive-example">
+                        <small>Normal:</small>
+                        <div>https://drive.google.com/file/d/FILE_ID/view</div>
+
+                        <small>Direct:</small>
+                        <div>https://drive.google.com/uc?export=download&id=FILE_ID</div>
+                    </div>
                 </div>
             </div>
 
             <div class="note">
-                Staff will download the latest active APK from the public staff app page.
+                Staff will always download the latest active APK from the staff app page.
             </div>
         </div>
 
@@ -123,13 +158,17 @@
 </div>
 
 <style>
+* {
+    box-sizing: border-box;
+}
+
 .upload-page {
     padding: 26px;
     min-height: calc(100vh - 70px);
     color: #fafafa;
     background:
-        radial-gradient(circle at top left, rgba(239, 68, 68, 0.12), transparent 34%),
-        radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.10), transparent 34%),
+        radial-gradient(circle at top left, rgba(239, 68, 68, 0.14), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(20, 184, 166, 0.10), transparent 34%),
         #09090b;
 }
 
@@ -160,6 +199,7 @@
     font-size: 34px;
     font-weight: 900;
     color: #fafafa;
+    line-height: 1.1;
 }
 
 .upload-header p {
@@ -175,6 +215,7 @@
     border-radius: 14px;
     text-decoration: none;
     font-weight: 900;
+    white-space: nowrap;
 }
 
 .back-btn:hover {
@@ -193,8 +234,9 @@
 
 .upload-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(320px, .8fr);
+    grid-template-columns: minmax(0, 1.35fr) minmax(340px, .9fr);
     gap: 18px;
+    align-items: start;
 }
 
 .upload-card,
@@ -204,6 +246,48 @@
     border-radius: 24px;
     padding: 24px;
     box-shadow: 0 24px 70px rgba(0,0,0,.28);
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #3f3f46;
+}
+
+.icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #ef4444, #7f1d1d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.card-title h2,
+.info-card h3 {
+    margin: 0;
+    color: #fafafa;
+    font-size: 22px;
+    font-weight: 900;
+}
+
+.card-title p {
+    margin: 5px 0 0;
+    color: #a1a1aa;
+    font-size: 14px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
 }
 
 .form-group {
@@ -218,8 +302,7 @@
     margin-bottom: 8px;
 }
 
-.form-group input[type="text"],
-.form-group input[type="number"],
+.form-group input,
 .form-group textarea {
     width: 100%;
     background: #27272a;
@@ -240,49 +323,27 @@
     box-shadow: 0 0 0 3px rgba(239,68,68,.12);
 }
 
-.file-box {
-    border: 1.5px dashed #52525b;
-    background: #18181b;
-    border-radius: 20px;
-    padding: 30px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: .2s;
-}
-
-.file-box:hover {
-    border-color: #ef4444;
-    background: rgba(239,68,68,.06);
-}
-
-.file-box input {
-    display: none;
-}
-
-.file-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 22px;
-    background: rgba(239,68,68,.14);
-    color: #f87171;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 14px;
-    font-size: 32px;
-    font-weight: 900;
-}
-
-.file-box strong {
-    display: block;
-    color: #fafafa;
-    font-size: 18px;
-}
-
-.file-box span {
+.form-group small {
     display: block;
     color: #a1a1aa;
-    margin-top: 6px;
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+.link-input-wrap {
+    position: relative;
+}
+
+.link-input-wrap i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #71717a;
+}
+
+.link-input-wrap input {
+    padding-left: 44px;
 }
 
 .latest-box {
@@ -324,6 +385,10 @@
     font-weight: 900;
     cursor: pointer;
     box-shadow: 0 16px 35px rgba(239,68,68,.22);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
 }
 
 .upload-btn:hover {
@@ -331,10 +396,7 @@
 }
 
 .info-card h3 {
-    color: #fafafa;
-    font-size: 22px;
-    font-weight: 900;
-    margin: 0 0 18px;
+    margin-bottom: 18px;
 }
 
 .check-item {
@@ -371,15 +433,48 @@
     line-height: 1.5;
 }
 
-code {
-    display: inline-block;
-    color: #fca5a5;
-    background: rgba(239,68,68,.10);
-    border: 1px solid rgba(239,68,68,.15);
-    padding: 4px 8px;
-    border-radius: 8px;
-    white-space: nowrap;
+.command-box {
+    margin-top: 10px;
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    color: #4ade80;
+    padding: 11px 12px;
+    border-radius: 12px;
+    font-family: monospace;
     font-size: 13px;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.drive-example {
+    margin-top: 10px;
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.drive-example small {
+    color: #71717a;
+    display: block;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 10px;
+    margin-bottom: 4px;
+}
+
+.drive-example div {
+    color: #d4d4d8;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    word-break: break-all;
+    margin-bottom: 9px;
+}
+
+.drive-example div:last-child {
+    margin-bottom: 0;
+    color: #4ade80;
 }
 
 .note {
@@ -392,7 +487,7 @@ code {
     line-height: 1.5;
 }
 
-@media(max-width: 950px) {
+@media(max-width: 1000px) {
     .upload-grid {
         grid-template-columns: 1fr;
     }
@@ -403,7 +498,7 @@ code {
     }
 }
 
-@media(max-width: 560px) {
+@media(max-width: 600px) {
     .upload-page {
         padding: 16px;
     }
@@ -412,11 +507,18 @@ code {
         font-size: 28px;
     }
 
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
     .back-btn,
     .upload-btn {
         width: 100%;
         text-align: center;
-        justify-content: center;
+    }
+
+    .card-title {
+        align-items: flex-start;
     }
 }
 </style>

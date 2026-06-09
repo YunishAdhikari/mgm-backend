@@ -241,6 +241,7 @@ public function autoAllocate(Request $request)
 
         $staffWorkload[$selectedStaffId]['minutes'] += $estimatedMinutes;
     }
+    logActivity('Generated Auto Allocation', 'Housekeeping', 'Rooms auto allocated for today');
 
     return back()->with('success', 'Rooms auto allocated successfully.');
 }
