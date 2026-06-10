@@ -31,6 +31,7 @@ use App\Http\Controllers\ManagerAttendanceController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\ManagerReportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Reception\GroupBuffetBookingController;
 use App\Http\Controllers\Reception\RoomStatusController;
 use App\Http\Controllers\ReceptionDashboardController;
 use App\Http\Controllers\RestaurantBookingController;
@@ -257,6 +258,12 @@ use Illuminate\Http\Request;
         //room plan
         Route::get('/room-status', [RoomStatusController::class, 'index'])->name('room-status.index');
         Route::post('/room-status/update', [RoomStatusController::class, 'update'])->name('room-status.update');
+
+        Route::get('/group-buffets',[GroupBuffetBookingController::class, 'index'])->name('group-buffets.index');
+        Route::get('/group-buffets/create',[GroupBuffetBookingController::class, 'create'])->name('group-buffets.create');
+        Route::post('/group-buffets',[GroupBuffetBookingController::class, 'store'])->name('group-buffets.store');
+        Route::put('/reception/group-buffets/{groupBuffet}', [GroupBuffetBookingController::class, 'update'])->name('group-buffets.update');
+        Route::get('/reception/group-buffets-report', [GroupBuffetBookingController::class, 'dailyReport'])->name('group-buffets.daily-report');
     });
 
 

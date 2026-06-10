@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+public function up(): void
+{
+    Schema::create('group_buffet_booking_tables', function (Blueprint $table) {
+        $table->id();
+
+        $table->foreignId('group_buffet_booking_id')
+            ->constrained('group_buffet_bookings')
+            ->cascadeOnDelete();
+
+        $table->foreignId('restaurant_table_id')
+            ->constrained('restaurant_tables')
+            ->cascadeOnDelete();
+
+        $table->timestamps();
+    });
+}
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('group_buffet_booking_tables');
+    }
+};

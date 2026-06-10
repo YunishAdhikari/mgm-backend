@@ -23,4 +23,12 @@ public function bookings()
 {
     return $this->hasMany(RestaurantBooking::class);
 }
+
+public function groupBuffetBookings()
+{
+    return $this->belongsToMany(
+        GroupBuffetBooking::class,
+        'group_buffet_booking_tables'
+    );
+}
 }
