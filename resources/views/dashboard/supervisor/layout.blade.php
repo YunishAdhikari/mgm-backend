@@ -457,33 +457,9 @@
             <span class="menu-dot"></span>
         </a>
 
-        @if(in_array($department, ['reception', 'front office']))
-            <div class="menu-title">Reception</div>
+   
 
-            <a href="{{ route('reception.restaurant.bookings.index') }}" class="menu {{ request()->routeIs('reception.restaurant.bookings.*') ? 'active' : '' }}">
-                <i class="fa-solid fa-utensils"></i>
-                <span>Restaurant Bookings</span>
-            </a>
-
-            <a href="#" class="menu">
-                <i class="fa-solid fa-spa"></i>
-                <span>Spa Bookings</span>
-            </a>
-        @endif
-
-        @if(in_array($department, ['f&b', 'fb', 'f and b', 'food and beverage']))
-            <div class="menu-title">F&B</div>
-
-            <a href="{{ route('fb.restaurant.bookings.index') }}" class="menu {{ request()->routeIs('fb.restaurant.bookings.*') ? 'active' : '' }}">
-                <i class="fa-solid fa-utensils"></i>
-                <span>Restaurant Bookings</span>
-            </a>
-
-            <a href="{{ route('fb.floor-plan') }}" class="menu {{ request()->routeIs('fb.floor-plan') ? 'active' : '' }}">
-                <i class="fa-solid fa-chair"></i>
-                <span>Floor Plan</span>
-            </a>
-        @endif
+     
 
         {{-- <a href="{{ route('housekeeping.board.index') }}" class="nav-link">
             <i class="fa-solid fa-broom"></i>
