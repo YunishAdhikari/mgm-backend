@@ -148,15 +148,7 @@ public function store(Request $request)
         'department_id' => $request->department_id,
     ]);
 
-    try {
-        logActivity(
-            'Created User',
-            'Admin',
-            'Created user: ' . $user->name
-        );
-    } catch (\Exception $e) {
-        Log::error('Log activity failed: ' . $e->getMessage());
-    }
+
 
     try {
         Mail::to($user->email)
