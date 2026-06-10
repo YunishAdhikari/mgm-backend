@@ -28,8 +28,11 @@ class ManagerAttendanceController extends Controller
         }
 
         $logs = $query->paginate(20)->withQueryString();
+        $staffUsers = User::where('status', 'active')
+        ->orderBy('name')
+        ->get();
 
-        return view('dashboard.manager.attendance.index', compact('logs'));
+        return view('dashboard.manager.attendance.index', compact('logs','staffUsers'));
     }
 
     public function update(Request $request, AttendanceLog $attendanceLog)
@@ -241,5 +244,37 @@ private function getInitials($name)
             return strtoupper(substr($part, 0, 1));
         })
         ->join('');
+}
+
+
+public function manualStore(Request $request)
+{
+    $request->validate([
+        'user_id' => 'required|exists:users,id',
+        'attendance_date' => 'required|date',
+        'clock_in_at' => 'required',
+        'clock_out_at' => 'nullable',
+        'status' => 'required|in:clocked_in,clocked_out',
+    ]);
+
+    $clockIn = Carbon::parse($request->attendance_date . ' ' . $request->clock_in_at, 'Europe/London');
+
+    $clockOut = null;
+
+    if ($request->clock_out_at) {
+        $clockOut = Carbon::parse($request->attendance_date . ' ' . $request->clock_out_at, 'Europe/London');
+    }
+
+    AttendanceLog::create([
+        'user_id' => $request->user_id,
+        'attendance_date' => $request->attendance_date,
+        'clock_in_at' => $clockIn,
+        'clock_out_at' => $clockOut,
+        'status' => $request->status,
+        // 'clock_in_ip' => $request->ip(),
+        // 'clock_out_ip' => $clockOut ? $request->ip() : null,
+    ]);
+
+    return back()->with('success', 'Manual attendance added successfully.');
 }
 }

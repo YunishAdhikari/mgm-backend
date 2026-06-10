@@ -214,11 +214,14 @@ use Illuminate\Http\Request;
         Route::get('/manager/rota/view/pdf', [RotaController::class, 'managerRotaPdf'])->name('manager.rota.pdf');
         //attendance access
         Route::get('/manager/attendance', [ManagerAttendanceController::class, 'index'])->name('manager.attendance.index');
+        Route::post('/manager/attendance/manual-store', [ManagerAttendanceController::class, 'manualStore'])->name('manager.attendance.manualStore');
         Route::put('/manager/attendance/{attendanceLog}', [ManagerAttendanceController::class, 'update'])->name('manager.attendance.update');
         Route::delete('/manager/attendance/{attendanceLog}', [ManagerAttendanceController::class, 'destroy'])->name('manager.attendance.destroy');
         //Attendence Report
         Route::get('/manager/attendance/monthly-report', [ManagerAttendanceController::class, 'monthlyReportForm'])->name('manager.attendance.monthly.form');
         Route::get('/manager/attendance/monthly-report/pdf', [ManagerAttendanceController::class, 'monthlyReportPdf'])->name('manager.attendance.monthly.pdf');
+
+
     });
 
     // --- SUPERVISOR ROUTES ---

@@ -2,36 +2,40 @@
 
 @section('content')
 
-<!-- Breadcrumb -->
 <div class="breadcrumb">
     <span><i class="fas fa-home"></i> Home</span>
     <span class="separator">/</span>
     <span class="current">Staff Attendance</span>
 </div>
 
-<!-- Success Message -->
 @if(session('success'))
     <div class="alert-success">
         <i class="fas fa-check-circle"></i> {{ session('success') }}
     </div>
 @endif
 
-<!-- Filter Card -->
+@if($errors->any())
+    <div class="alert-error">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ $errors->first() }}
+    </div>
+@endif
+
 <div class="filter-card">
     <form method="GET" action="{{ route('manager.attendance.index') }}">
         <div class="filter-group">
-            <input type="date" name="date" value="{{ request('date') }}" placeholder="Select date">
+            <input type="date" name="date" value="{{ request('date') }}">
         </div>
-        
+
         <div class="filter-group">
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Search staff name or email">
         </div>
-        
+
         <div class="filter-actions">
             <button type="submit" class="btn-filter">
                 <i class="fas fa-search"></i> Filter
             </button>
-            
+
             <a href="{{ route('manager.attendance.index') }}" class="btn-clear">
                 <i class="fas fa-times"></i> Clear
             </a>
@@ -39,13 +43,19 @@
     </form>
 </div>
 
-<!-- Table Card -->
 <div class="table-card">
     <div class="table-header">
         <h3><i class="fas fa-clock"></i> Staff Attendance</h3>
-        <span class="record-count">{{ $logs->total() }} records</span>
+
+        <div class="header-actions">
+            <span class="record-count">{{ $logs->total() }} records</span>
+
+            <button type="button" class="btn-add" onclick="openManualModal()">
+                <i class="fas fa-plus"></i> Add Manual Attendance
+            </button>
+        </div>
     </div>
-    
+
     <div class="table-wrap">
         <table class="data-table">
             <thead>
@@ -93,7 +103,6 @@
                         </td>
                     </tr>
 
-                    <!-- Modal -->
                     <div class="modal" id="modal{{ $log->id }}">
                         <div class="modal-box">
                             <div class="modal-header">
@@ -151,23 +160,90 @@
     </div>
 </div>
 
+<div class="modal" id="manualAttendanceModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2><i class="fas fa-plus"></i> Add Manual Attendance</h2>
+            <button onclick="closeManualModal()">&times;</button>
+        </div>
+
+        <form method="POST" action="{{ route('manager.attendance.manualStore') }}">
+            @csrf
+
+            <div class="form-group">
+                <label>Staff</label>
+                <select name="user_id" required>
+                    <option value="">Select staff</option>
+                    @foreach($staffUsers as $staff)
+                        <option value="{{ $staff->id }}">
+                            {{ $staff->name }} - {{ $staff->email }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" name="attendance_date" value="{{ now('Europe/London')->format('Y-m-d') }}" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Clock In</label>
+                    <input type="time" name="clock_in_at" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Clock Out</label>
+                    <input type="time" name="clock_out_at">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status" required>
+                    <option value="clocked_in">Clocked In</option>
+                    <option value="clocked_out">Clocked Out</option>
+                </select>
+            </div>
+
+            <div class="manual-note">
+                <i class="fas fa-info-circle"></i>
+                Use this only when staff forgot their phone or QR scanning was not possible.
+            </div>
+
+            <button type="submit" class="btn-save">
+                <i class="fas fa-save"></i> Save Manual Attendance
+            </button>
+        </form>
+    </div>
+</div>
+
 <style>
-/* Success Alert */
-.alert-success {
-    background: rgba(34, 197, 94, 0.15);
-    border: 1px solid rgba(34, 197, 94, 0.3);
+.alert-success,
+.alert-error {
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 24px;
     display: flex;
     align-items: center;
     gap: 12px;
-    color: #22c55e;
     font-size: 14px;
     font-weight: 600;
 }
 
-/* Filter Card */
+.alert-success {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+}
+
+.alert-error {
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: #ef4444;
+}
+
 .filter-card {
     background: var(--dark-secondary);
     border: 1px solid var(--gray);
@@ -196,21 +272,20 @@
     font-size: 14px;
 }
 
-.filter-group input::placeholder {
-    color: var(--text-dim);
-}
-
 .filter-group input:focus {
     outline: none;
     border-color: var(--primary);
 }
 
-.filter-actions {
+.filter-actions,
+.header-actions {
     display: flex;
-    gap: 8px;
+    gap: 10px;
+    align-items: center;
 }
 
-.btn-filter {
+.btn-filter,
+.btn-add {
     padding: 12px 20px;
     background: var(--primary);
     border: none;
@@ -220,9 +295,11 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
+    text-decoration: none;
 }
 
-.btn-filter:hover {
+.btn-filter:hover,
+.btn-add:hover {
     background: var(--primary-dark);
 }
 
@@ -243,7 +320,6 @@
     color: var(--text);
 }
 
-/* Table Card */
 .table-card {
     background: var(--dark-secondary);
     border: 1px solid var(--gray);
@@ -255,6 +331,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
     padding: 20px;
     border-bottom: 1px solid var(--gray);
 }
@@ -277,9 +354,9 @@
     background: var(--gray);
     padding: 6px 12px;
     border-radius: 100px;
+    white-space: nowrap;
 }
 
-/* Table */
 .table-wrap {
     overflow-x: auto;
 }
@@ -333,7 +410,6 @@
     margin-top: 4px;
 }
 
-/* Badge */
 .badge {
     display: inline-flex;
     align-items: center;
@@ -353,7 +429,6 @@
     color: #6b7280;
 }
 
-/* Action Buttons */
 .action-buttons {
     display: flex;
     gap: 8px;
@@ -368,11 +443,6 @@
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
-}
-
-.btn-edit:hover {
-    background: var(--primary-dark);
 }
 
 .btn-delete {
@@ -384,15 +454,8 @@
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
 }
 
-.btn-delete:hover {
-    background: var(--primary);
-    color: white;
-}
-
-/* Empty State */
 .empty-text {
     text-align: center;
     padding: 48px;
@@ -406,37 +469,11 @@
     opacity: 0.5;
 }
 
-.empty-text p {
-    font-size: 14px;
-}
-
-/* Pagination */
 .pagination-wrap {
     padding: 20px;
     border-top: 1px solid var(--gray);
 }
 
-.pagination-wrap .pagination {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-}
-
-.pagination-wrap .page-item .page-link {
-    padding: 8px 14px;
-    background: var(--gray);
-    border: none;
-    border-radius: 8px;
-    color: var(--text-muted);
-    font-size: 14px;
-}
-
-.pagination-wrap .page-item.active .page-link {
-    background: var(--primary);
-    color: white;
-}
-
-/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -455,17 +492,19 @@
 .modal-box {
     background: var(--dark-secondary);
     width: 100%;
-    max-width: 450px;
+    max-width: 520px;
     border-radius: 16px;
     padding: 24px;
     border: 1px solid var(--gray);
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 22px;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--gray);
 }
@@ -493,12 +532,12 @@
     cursor: pointer;
 }
 
-.modal-header button:hover {
-    background: var(--gray-light);
-    color: var(--text);
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
 }
 
-/* Form */
 .form-group {
     margin-bottom: 16px;
 }
@@ -528,6 +567,18 @@
     border-color: var(--primary);
 }
 
+.manual-note {
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    color: #93c5fd;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    display: flex;
+    gap: 10px;
+    line-height: 1.4;
+}
+
 .btn-save {
     width: 100%;
     padding: 14px;
@@ -539,32 +590,30 @@
     font-weight: 600;
     cursor: pointer;
     margin-top: 20px;
-    transition: all 0.3s;
 }
 
 .btn-save:hover {
     background: var(--primary-dark);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-    .filter-card form {
+    .filter-card form,
+    .table-header,
+    .header-actions {
         flex-direction: column;
+        align-items: stretch;
     }
-    
-    .filter-group {
-        width: 100%;
-    }
-    
-    .filter-actions {
-        width: 100%;
-        justify-content: stretch;
-    }
-    
+
+    .filter-group,
+    .filter-actions,
     .btn-filter,
-    .btn-clear {
-        flex: 1;
-        text-align: center;
+    .btn-clear,
+    .btn-add {
+        width: 100%;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
     }
 }
 </style>
@@ -578,7 +627,14 @@ function closeModal(id) {
     document.getElementById('modal' + id).classList.remove('active');
 }
 
-// Close modal when clicking outside
+function openManualModal() {
+    document.getElementById('manualAttendanceModal').classList.add('active');
+}
+
+function closeManualModal() {
+    document.getElementById('manualAttendanceModal').classList.remove('active');
+}
+
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('modal')) {
         e.target.classList.remove('active');
