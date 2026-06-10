@@ -198,7 +198,8 @@
                     <td>
                         Approved
                         <br>
-                        {{ $holiday->approver->name ?? 'Manager' }}
+                        {{-- {{ $holiday->approver->name ?? 'Manager' }} --}}
+                        {{ $holiday->approver ? $holiday->approver->name : 'Manager' }}
                         <br>
                         {{ \Carbon\Carbon::parse($holiday->updated_at)->format('d M Y') }}
                     </td>
