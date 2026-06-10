@@ -295,7 +295,7 @@ use Illuminate\Http\Request;
         Route::get('/hk-rota/view', [HousekeepingSupervisorRotaController::class, 'view'])->name('hk-rota.view');
         Route::get('/holiday-calendar', [HousekeepingSupervisorRotaController::class, 'holidayCalendar'])->name('holidays.calendar');
         Route::get('/reports/productivity', [HousekeepingReportController::class, 'productivity'])->name('reports.productivity');
-        Route::get('/housekeeping/inspected-rooms', [HousekeepingInspectionController::class, 'inspectedRooms'])->name('housekeeping.inspectedRooms');
+        Route::get('/housekeeping/inspected-rooms', [HousekeepingInspectionController::class, 'inspectedRooms'])->name('inspectedRooms');
     });
 
 // --- AUTHENTICATION ---

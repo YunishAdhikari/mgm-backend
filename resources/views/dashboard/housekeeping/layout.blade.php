@@ -349,7 +349,7 @@
                 <i class="fas fa-clipboard-check"></i>
                 Inspection Queue
             </a>
-            <a href="{{ route('housekeeping.inspectedRooms') }}" class="nav-link">
+            <a href="{{ route('housekeeping-supervisor.inspectedRooms') }}" class="nav-link">
                 <i class="fas fa-clipboard-check"></i>
                 <span>Inspected Rooms</span>
             </a>
