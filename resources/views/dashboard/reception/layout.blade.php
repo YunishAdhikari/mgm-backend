@@ -540,11 +540,6 @@
                     <span class="nav-icon"><i class="fa-solid fa-spa"></i></span>
                     <span>Spa</span>
                 </a>
-                
-                <a href="#" class="nav-link">
-                    <span class="nav-icon"><i class="fa-solid fa-screwdriver-wrench"></i></span>
-                    <span>Maintenance</span>
-                </a>
 
                 <a href="{{ route('reception.restaurant.bookings.list') }}" class="nav-link">
                     <span class="nav-icon"><i class="fa-solid fa-list"></i></span>
