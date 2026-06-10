@@ -98,10 +98,6 @@ public function status(Request $request)
         'is_clocked_in' => true,
         'clock_in_at' => $log->clock_in_at->format('Y-m-d H:i:s'),
     ]);
-    // return response()->json([
-    //     'is_clocked_in' => true,
-    //     'clock_in_at' => $log->clock_in_at,
-    // ]);
 }
 
 }
