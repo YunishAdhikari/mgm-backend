@@ -20,22 +20,34 @@ class MaintenanceJob extends Model
         'reported_date',
         'completed_date',
     ];
-    protected $appends = ['image_url'];
-    public function getImageUrlAttribute()
-{
-    if (!$this->image) {
-        return null;
-    }
 
-    return asset('uploads/maintenance/' . $this->image);
-}
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute()
+    {
+        if (!$this->image) {
+            return null;
+        }
+
+        return asset('uploads/maintenance/' . $this->image);
+    }
 
     public function reporter()
     {
         return $this->belongsTo(User::class, 'reported_by');
     }
 
+    public function reportedBy()
+    {
+        return $this->belongsTo(User::class, 'reported_by');
+    }
+
     public function assignedUser()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function assignedTo()
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
