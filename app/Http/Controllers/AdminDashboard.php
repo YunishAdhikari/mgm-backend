@@ -15,6 +15,7 @@ use App\Mail\EmployeeCredentialsMail;
 use App\Models\ActivityLog;
 use App\Models\MaintenanceJob;
 use App\Models\News;
+use Illuminate\Support\Facades\Log;
 
 class AdminDashboard extends Controller
 {
@@ -118,7 +119,7 @@ public function create()
         // return view('admin.users.create', compact('roles', 'departments'));
     }
 
-    public function store(Request $request)
+public function store(Request $request)
 {
     $request->validate([
         'name' => 'required|string|max:255',
@@ -129,10 +130,10 @@ public function create()
         'department_id' => 'nullable|exists:departments,id',
     ]);
 
+    $imagePath = null;
+
     if ($request->hasFile('image')) {
         $imagePath = $request->file('image')->store('users', 'public');
-    } else {
-        $imagePath = null;
     }
 
     $plainPassword = $request->password;
@@ -147,13 +148,26 @@ public function create()
         'department_id' => $request->department_id,
     ]);
 
+    try {
         logActivity(
-        'Created User',
-        'Admin',
-        'Created user: ' . $user->name
-    );
-    Mail::to($user->email)
-        ->send(new EmployeeCredentialsMail($user, $plainPassword));
+            'Created User',
+            'Admin',
+            'Created user: ' . $user->name
+        );
+    } catch (\Exception $e) {
+        Log::error('Log activity failed: ' . $e->getMessage());
+    }
+
+    try {
+        Mail::to($user->email)
+            ->send(new EmployeeCredentialsMail($user, $plainPassword));
+    } catch (\Exception $e) {
+        Log::error('Employee credential email failed: ' . $e->getMessage());
+
+        return redirect()
+            ->route('dashboard')
+            ->with('success', 'Employee added successfully, but email could not be sent.');
+    }
 
     return redirect()
         ->route('dashboard')
