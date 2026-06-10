@@ -179,19 +179,18 @@ return response()->json([
         }
 
         $job->save();
-        logActivity('Changed Maintenance Status', 'Maintenance', 'Job status changed to ' . $job->status);
-        // if ($job->status === 'completed') {
+        if ($job->status === 'completed') {
 
-        //         $emails = User::where('department_id', $job->department_id)
-        //             ->whereNotNull('email')
-        //             ->pluck('email');
+                $emails = User::where('department_id', $job->department_id)
+                    ->whereNotNull('email')
+                    ->pluck('email');
 
-        //         foreach ($emails as $email) {
-        //             Mail::to($email)->send(
-        //                 new MaintenanceCompletedMail($job)
-        //             );
-        //         }
-        //     }
+                foreach ($emails as $email) {
+                    Mail::to($email)->send(
+                        new MaintenanceCompletedMail($job)
+                    );
+                }
+            }
 
         return response()->json([
             'success' => true,
