@@ -180,7 +180,6 @@ public function destroy($id)
 {
     $user = User::findOrFail($id);
     $user->delete();
-    logActivity('Deleted User', 'Admin', 'Deleted employee: ' . $user->name);
 
     return back()->with('success', 'Employee deleted successfully.');
 }
