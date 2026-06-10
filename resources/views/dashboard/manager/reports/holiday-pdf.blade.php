@@ -5,14 +5,11 @@
     <title>Holiday Request Form</title>
 
     <style>
-        /* @page {
-            margin: 20px;
-        } */
-
         @page {
-    size: A4 portrait;
-    margin: 20px;
-}
+            size: A4 portrait;
+            margin: 20px;
+        }
+
         body {
             font-family: DejaVu Sans, sans-serif;
             font-size: 12px;
@@ -31,7 +28,7 @@
             width: 100%;
             margin-bottom: 20px;
             position: relative;
-
+            min-height: 90px;
         }
 
         .logo {
@@ -40,21 +37,14 @@
             top: 0;
             width: 110px;
             height: auto;
-            background: #b91c1c;
-            color: #facc15;
-            text-align: center;
-            font-size: 30px;
-            font-weight: bold;
-            line-height: 70px;
         }
-       
 
         .title {
             text-align: center;
             font-size: 24px;
             font-weight: bold;
             text-decoration: underline;
-            margin-top: 35px;
+            padding-top: 35px;
         }
 
         .employee-table {
@@ -112,11 +102,25 @@
 <div class="page">
 
     <div class="header">
-        {{-- <div class="logo">MGM</div> --}}
-        <img
-            src="{{ public_path('images/mgm-logo.png') }}"
-            class="logo"
-        >
+        @if(file_exists(public_path('images/mgm-logo.png')))
+            <img src="{{ public_path('images/mgm-logo.png') }}" class="logo">
+        @else
+            <div style="
+                position:absolute;
+                right:10px;
+                top:0;
+                width:110px;
+                height:70px;
+                background:#b91c1c;
+                color:#facc15;
+                text-align:center;
+                font-size:30px;
+                font-weight:bold;
+                line-height:70px;
+            ">
+                MGM
+            </div>
+        @endif
 
         <div class="title">HOLIDAY REQUEST FORM</div>
     </div>
@@ -142,18 +146,15 @@
             <td>{{ $employee->department->name ?? 'N/A' }}</td>
         </tr>
 
-        {{-- <tr>
+        <tr>
             <td class="label">Holiday year:</td>
-            <td>{{ $year }}</td>
-        </tr> --}}
-        <td class="label">Holiday year:</td>
             <td>
                 {{ $year }}
                 @if(!empty($month))
-                {{ \Carbon\Carbon::create()->month((int)$month)->format('F') }}
-                    {{-- - {{ \Carbon\Carbon::create()->month($month)->format('F') }} --}}
+                    - {{ \Carbon\Carbon::create()->month((int) $month)->format('F') }}
                 @endif
             </td>
+        </tr>
 
         <tr>
             <td class="label">Entitlement in full year:</td>
@@ -174,16 +175,26 @@
         </thead>
 
         <tbody>
-            @foreach($employee->holidayRequests as $holiday)
+            @foreach($employee->holidayRequests ?? [] as $holiday)
                 <tr>
-                    <td>{{ \Carbon\Carbon::parse($holiday->start_date)->format('d M Y') }}</td>
-                    <td>{{ \Carbon\Carbon::parse($holiday->end_date)->format('d M Y') }}</td>
-                    <td>{{ $holiday->total_days }}</td>
+                    <td>
+                        {{ \Carbon\Carbon::parse($holiday->start_date)->format('d M Y') }}
+                    </td>
+
+                    <td>
+                        {{ \Carbon\Carbon::parse($holiday->end_date)->format('d M Y') }}
+                    </td>
+
+                    <td>
+                        {{ $holiday->total_days }}
+                    </td>
+
                     <td>
                         {{ \Carbon\Carbon::parse($holiday->created_at)->format('d M Y') }}
                         <br>
                         <span class="small">{{ $employee->name }}</span>
                     </td>
+
                     <td>
                         Approved
                         <br>
@@ -191,6 +202,7 @@
                         <br>
                         {{ \Carbon\Carbon::parse($holiday->updated_at)->format('d M Y') }}
                     </td>
+
                     <td></td>
                 </tr>
             @endforeach
