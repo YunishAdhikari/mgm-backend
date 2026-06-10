@@ -349,6 +349,10 @@
                 <i class="fas fa-clipboard-check"></i>
                 Inspection Queue
             </a>
+            <a href="{{ route('housekeeping.inspectedRooms') }}" class="nav-link">
+                <i class="fas fa-clipboard-check"></i>
+                <span>Inspected Rooms</span>
+            </a>
 
             <a href="{{ route('housekeeping-supervisor.dnd-pending.index') }}" class="nav-link">
                 <i class="fas fa-door-closed"></i>

@@ -102,4 +102,14 @@ class HousekeepingInspectionController extends Controller
 
         return view('dashboard.housekeeping.inspection.ooo', compact('rooms', 'stats'));
     }
+
+    public function inspectedRooms()
+{
+    $rooms = RoomStatusUpdate::with(['room', 'assignedUser', 'inspectedBy'])
+        ->where('status', 'inspected')
+        ->latest()
+        ->get();
+
+    return view('dashboard.housekeeping.inspected-rooms', compact('rooms'));
+}
 }
