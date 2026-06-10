@@ -30,26 +30,30 @@ public function generateHolidayPdf(Request $request)
         'employee_id' => 'nullable|exists:users,id',
     ]);
 
+    $year = (int) $request->year;
+    $month = $request->filled('month') ? (int) $request->month : null;
+
     $query = User::with([
         'department',
         'role',
-        'holidayRequests' => function ($q) use ($request) {
-            $q->whereYear('start_date', $request->year)
+        'holidayRequests' => function ($q) use ($year, $month) {
+            $q->with('approver')
+                ->whereYear('start_date', $year)
                 ->where('status', 'approved');
 
-            if ($request->filled('month')) {
-                $q->whereMonth('start_date', $request->month);
+            if ($month) {
+                $q->whereMonth('start_date', $month);
             }
 
             $q->orderBy('start_date');
         }
     ])
-    ->whereHas('holidayRequests', function ($q) use ($request) {
-        $q->whereYear('start_date', $request->year)
+    ->whereHas('holidayRequests', function ($q) use ($year, $month) {
+        $q->whereYear('start_date', $year)
             ->where('status', 'approved');
 
-        if ($request->filled('month')) {
-            $q->whereMonth('start_date', $request->month);
+        if ($month) {
+            $q->whereMonth('start_date', $month);
         }
     });
 
@@ -59,23 +63,27 @@ public function generateHolidayPdf(Request $request)
 
     $employees = $query->orderBy('name')->get();
 
-    $pdf = Pdf::loadView('dashboard.manager.reports.holiday-pdf', [
-        'employees' => $employees,
-        'year' => $request->year,
-        'month' => $request->month,
-    ])->setPaper('a4', 'landscape');
-
-    $fileName = 'holiday-request-report-' . $request->year;
-
-    if ($request->filled('month')) {
-        $fileName .= '-' . str_pad($request->month, 2, '0', STR_PAD_LEFT);
+    if ($employees->isEmpty()) {
+        return back()->with(
+            'error',
+            'No approved holiday requests found for the selected filter.'
+        );
     }
 
-    $fileName .= '.pdf';
+    $pdf = Pdf::loadView('dashboard.manager.reports.holiday-pdf', [
+        'employees' => $employees,
+        'year' => $year,
+        'month' => $month,
+    ])->setPaper('a4', 'portrait');
 
-    return $pdf->download($fileName);
+    $fileName = 'holiday-request-report-' . $year;
+
+    if ($month) {
+        $fileName .= '-' . str_pad($month, 2, '0', STR_PAD_LEFT);
+    }
+
+    return $pdf->download($fileName . '.pdf');
 }
-
 
 public function index()
 {

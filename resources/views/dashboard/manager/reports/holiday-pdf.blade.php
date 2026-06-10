@@ -1,3 +1,4 @@
+```blade
 <!DOCTYPE html>
 <html>
 <head>
@@ -102,30 +103,19 @@
 <div class="page">
 
     <div class="header">
+
         @if(file_exists(public_path('images/mgm-logo.png')))
             <img src="{{ public_path('images/mgm-logo.png') }}" class="logo">
-        @else
-            <div style="
-                position:absolute;
-                right:10px;
-                top:0;
-                width:110px;
-                height:70px;
-                background:#b91c1c;
-                color:#facc15;
-                text-align:center;
-                font-size:30px;
-                font-weight:bold;
-                line-height:70px;
-            ">
-                MGM
-            </div>
         @endif
 
-        <div class="title">HOLIDAY REQUEST FORM</div>
+        <div class="title">
+            HOLIDAY REQUEST FORM
+        </div>
+
     </div>
 
     <table class="employee-table">
+
         <tr>
             <td class="label">Employee Full Name:</td>
             <td>{{ $employee->name }}</td>
@@ -138,7 +128,7 @@
 
         <tr>
             <td class="label">Position:</td>
-            <td>{{ ucfirst($employee->role->name ?? 'Staff') }}</td>
+            <td>{{ $employee->role->name ?? 'Staff' }}</td>
         </tr>
 
         <tr>
@@ -147,37 +137,44 @@
         </tr>
 
         <tr>
-            <td class="label">Holiday year:</td>
+            <td class="label">Holiday Year:</td>
             <td>
                 {{ $year }}
+
                 @if(!empty($month))
-                    - {{ \Carbon\Carbon::create()->month((int) $month)->format('F') }}
+                    - {{ \Carbon\Carbon::create()->month((int)$month)->format('F') }}
                 @endif
             </td>
         </tr>
 
         <tr>
-            <td class="label">Entitlement in full year:</td>
+            <td class="label">Entitlement in Full Year:</td>
             <td></td>
         </tr>
+
     </table>
 
     <table class="holiday-table">
+
         <thead>
             <tr>
                 <th>First Day<br>of Leave</th>
-                <th>Last Day of<br>Leave</th>
-                <th>Number<br>of working<br>days</th>
-                <th>Date of<br>request/employee<br>signature</th>
-                <th>Authorization:<br>Approved<br>by/Signature/Date</th>
-                <th>Days<br>remaining</th>
+                <th>Last Day<br>of Leave</th>
+                <th>Number of<br>Working Days</th>
+                <th>Date of Request /<br>Employee Signature</th>
+                <th>Approved By /<br>Signature / Date</th>
+                <th>Days<br>Remaining</th>
             </tr>
         </thead>
 
         <tbody>
-            @foreach($employee->holidayRequests ?? [] as $holiday)
+
+            @forelse($employee->holidayRequests as $holiday)
+
                 <tr>
+
                     <td>
+                        {{ optional($holiday->start_date)->format ? '' : '' }}
                         {{ \Carbon\Carbon::parse($holiday->start_date)->format('d M Y') }}
                     </td>
 
@@ -186,27 +183,43 @@
                     </td>
 
                     <td>
-                        {{ $holiday->total_days }}
+                        {{ $holiday->total_days ?? 0 }}
                     </td>
 
                     <td>
                         {{ \Carbon\Carbon::parse($holiday->created_at)->format('d M Y') }}
                         <br>
-                        <span class="small">{{ $employee->name }}</span>
+                        <span class="small">
+                            {{ $employee->name }}
+                        </span>
                     </td>
 
                     <td>
                         Approved
                         <br>
-                        {{-- {{ $holiday->approver->name ?? 'Manager' }} --}}
-                        {{ $holiday->approver ? $holiday->approver->name : 'Manager' }}
+
+                        {{ optional($holiday->approver)->name ?? 'Manager' }}
+
                         <br>
-                        {{ \Carbon\Carbon::parse($holiday->updated_at)->format('d M Y') }}
+
+                        @if($holiday->updated_at)
+                            {{ \Carbon\Carbon::parse($holiday->updated_at)->format('d M Y') }}
+                        @endif
                     </td>
 
                     <td></td>
+
                 </tr>
-            @endforeach
+
+            @empty
+
+                <tr>
+                    <td colspan="6">
+                        No holiday requests found
+                    </td>
+                </tr>
+
+            @endforelse
 
             @for($i = $employee->holidayRequests->count(); $i < 7; $i++)
                 <tr class="blank-row">
@@ -218,7 +231,9 @@
                     <td></td>
                 </tr>
             @endfor
+
         </tbody>
+
     </table>
 
 </div>
@@ -227,3 +242,4 @@
 
 </body>
 </html>
+```
