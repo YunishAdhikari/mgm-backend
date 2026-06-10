@@ -39,7 +39,8 @@ public function scanQr(Request $request)
         $log = AttendanceLog::create([
             'user_id' => $user->id,
             'attendance_date' => today(),
-            'clock_in_at' => now(),
+            // 'clock_in_at' => now(),
+            'clock_in_at' => now('Europe/London'),
             'clock_in_qr_token_id' => $qrToken->id,
             'status' => 'clocked_in',
         ]);
@@ -53,7 +54,8 @@ public function scanQr(Request $request)
     }
 
     $activeLog->update([
-        'clock_out_at' => now(),
+        // 'clock_out_at' => now(),
+        'clock_out_at' => now('Europe/London'),
         'clock_out_qr_token_id' => $qrToken->id,
         'status' => 'clocked_out',
     ]);
