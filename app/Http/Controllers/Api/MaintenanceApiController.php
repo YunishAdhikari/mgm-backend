@@ -90,11 +90,6 @@ class MaintenanceApiController extends Controller
     'reported_date' => now()->toDateString(),
 ]);
 
-logActivity(
-    'Created Maintenance Job',
-    'Maintenance',
-    'New maintenance job reported for room ' . $request->room_number
-);
 
 
 try {
