@@ -71,6 +71,8 @@ Route::middleware('auth:sanctum')->group(function () {
 // Route::post('/attendance/clock-out', [AttendanceApiController::class, 'clockOut']);
 // Route::get('/attendance/history', [AttendanceApiController::class, 'history']);
 Route::post('/attendance/scan-qr', [AttendanceApiController::class, 'scanQr']);
+Route::get('/attendance/status', [AttendanceApiController::class, 'status']);
+
 
 Route::get('hk/my-rooms', [HousekeepingStaffApiController::class, 'myRooms']);
 

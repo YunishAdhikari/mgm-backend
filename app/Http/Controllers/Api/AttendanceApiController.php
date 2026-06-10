@@ -78,4 +78,26 @@ public function scanQr(Request $request)
     ]);
 }
 
+public function status(Request $request)
+{
+    $user = $request->user();
+
+    $log = AttendanceLog::where('user_id', $user->id)
+        ->whereNull('clock_out_at')
+        ->latest()
+        ->first();
+
+    if (!$log) {
+        return response()->json([
+            'is_clocked_in' => false,
+            'clock_in_at' => null,
+        ]);
+    }
+
+    return response()->json([
+        'is_clocked_in' => true,
+        'clock_in_at' => $log->clock_in_at,
+    ]);
+}
+
 }
