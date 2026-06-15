@@ -43,7 +43,9 @@ use App\Http\Controllers\SupervisorController;
 use App\Http\Controllers\UserController;
 use App\Models\MobileAppVersion;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request;    
+use App\Models\User;
+use App\Services\FirebaseNotificationService;
 
 
     // --- PUBLIC ROUTES ---
@@ -153,6 +155,8 @@ use Illuminate\Http\Request;
     // --- KITCHEN SUPERVISOR ROUTES ---
     // Access: Kitchen Supervisors Only
     Route::middleware(['auth', 'role:Head chef'])->group(function () {
+        // AI Prep Plan
+        Route::get('/kitchen-supervisor/ai-prep-plan', [KitchenSupervisorController::class, 'aiPrepPlan'])->name('kitchen.ai.prep');
         // Dashboard
         Route::get('/kitchen-supervisor/dashboard', [KitchenSupervisorController::class, 'dashboard'])->name('kitchen.supervisor.dashboard');
         // Inventory
@@ -304,6 +308,24 @@ use Illuminate\Http\Request;
         Route::get('/reports/productivity', [HousekeepingReportController::class, 'productivity'])->name('reports.productivity');
         Route::get('/housekeeping/inspected-rooms', [HousekeepingInspectionController::class, 'inspectedRooms'])->name('inspectedRooms');
     });
+
+
+Route::get('/test-firebase-push', function () {
+    $user = User::whereNotNull('fcm_token')->latest()->first();
+    if (!$user) {
+        return 'No user with FCM token found.';
+    }
+    $firebase = new FirebaseNotificationService();
+    $response = $firebase->sendToToken(
+        $user->fcm_token,
+        'MGM Ops Test',
+        'Push notification from Laravel is working 🎉',
+        [
+            'type' => 'test',
+        ]
+    );
+    return response()->json($response);
+});
 
 // --- AUTHENTICATION ---
 require __DIR__.'/auth.php';

@@ -811,6 +811,9 @@
             <i class="fas fa-note-sticky"></i>
             <span>Handover Notes</span>
         </a>
+        <a href="{{ route('kitchen.ai.prep') }}" class="btn btn-success">
+                🤖 AI Prep Plan
+            </a>
     </div>
 </aside>
 

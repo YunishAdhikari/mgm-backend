@@ -10,7 +10,7 @@ use App\Models\RecipeIngredient;
 use App\Models\RotaShift;
 use App\Models\User;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\DB;
 
 class KitchenSupervisorController extends Controller
 {
@@ -183,5 +183,55 @@ return view('dashboard.kitchen-supervisor.rota.view', compact(
 //     'weekStart',
 //     'shifts'
 // ));
+}
+
+
+
+public function aiPrepPlan(Request $request)
+{
+    $date = $request->date ?? now()->toDateString();
+
+    $sales = DB::table('buffet_sales')
+        ->join('buffet_menus', 'buffet_sales.buffet_menu_id', '=', 'buffet_menus.id')
+        ->whereDate('buffet_sales.sale_date', $date)
+        ->select(
+            'buffet_sales.id',
+            'buffet_sales.pax',
+            'buffet_sales.note',
+            'buffet_menus.id as buffet_menu_id',
+            'buffet_menus.name as buffet_name',
+            'buffet_menus.service_type'
+        )
+        ->get();
+
+    $totalPax = $sales->sum('pax');
+
+    $ingredients = DB::table('buffet_sales')
+        ->join('buffet_menus', 'buffet_sales.buffet_menu_id', '=', 'buffet_menus.id')
+        ->join('buffet_menu_items', 'buffet_menus.id', '=', 'buffet_menu_items.buffet_menu_id')
+        ->join('menu_items', 'buffet_menu_items.menu_item_id', '=', 'menu_items.id')
+        ->join('recipe_ingredients', 'menu_items.id', '=', 'recipe_ingredients.menu_item_id')
+        ->join('inventory_items', 'recipe_ingredients.inventory_item_id', '=', 'inventory_items.id')
+        ->whereDate('buffet_sales.sale_date', $date)
+        ->select(
+            'inventory_items.name as ingredient_name',
+            DB::raw('SUM(recipe_ingredients.quantity * buffet_sales.pax) as total_required')
+        )
+        ->groupBy('inventory_items.name')
+        ->orderBy('inventory_items.name')
+        ->get();
+
+    $allergyWarnings = $sales->filter(function ($sale) {
+        return $sale->note &&
+            preg_match('/allergy|nut|gluten|vegan|vegetarian|dairy|halal|pork/i', $sale->note);
+    });
+
+    return view('dashboard.kitchen-supervisor.ai-prep-plan', compact(
+        'date',
+        'sales',
+        'totalPax',
+        'ingredients',
+        'allergyWarnings'
+    ));
 }
 }

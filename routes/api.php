@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\KitchenInventoryApiController;
 use App\Http\Controllers\Api\KitchenMobileController;
 use App\Http\Controllers\Api\AttendanceApiController;
 use App\Http\Controllers\Api\HousekeepingStaffApiController;
+use App\Http\Controllers\Api\FcmTokenController;
 use App\Http\Controllers\Api\PasswordResetApiController;
 
 Route::post('/reset-password',[PasswordResetApiController::class, 'reset']);
@@ -94,5 +95,9 @@ Route::get('/departments', function () {
         'success' => true,
         'departments' => \App\Models\Department::all()
     ]);
-});
+}
+);
+
+
+Route::middleware('auth:sanctum')->post('/save-fcm-token', [FcmTokenController::class, 'save']);
 });

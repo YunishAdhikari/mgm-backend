@@ -56,4 +56,5 @@ class MaintenanceJob extends Model
     {
         return $this->belongsTo(Department::class);
     }
+
 }

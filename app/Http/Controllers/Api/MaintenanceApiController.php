@@ -12,22 +12,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use App\Services\FirebaseNotificationService;
 
 class MaintenanceApiController extends Controller
 {
-    // public function index(Request $request)
-    // {
-    //     $user = $request->user();
-
-    //     $query = MaintenanceJob::with(['department', 'reporter', 'assignedUser'])
-    //         ->where('status', '!=', 'completed')
-    //         ->latest();
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'jobs' => $query->get(),
-    //     ]);
-    // }
+    
     public function index(Request $request)
 {
     $query = MaintenanceJob::with([
@@ -57,102 +46,107 @@ class MaintenanceApiController extends Controller
 }
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'department_id' => 'required|exists:departments,id',
-            'assigned_to' => 'nullable|exists:users,id',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'location' => 'nullable|string|max:255',
-            'room_number' => 'nullable|string|max:50',
-            'priority' => 'required|in:low,medium,high,urgent',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        ]);
+{
+    $request->validate([
+        'department_id' => 'required|exists:departments,id',
+        'assigned_to' => 'nullable|exists:users,id',
+        'title' => 'required|string|max:255',
+        'description' => 'required|string',
+        'location' => 'nullable|string|max:255',
+        'room_number' => 'nullable|string|max:50',
+        'priority' => 'required|in:low,medium,high,urgent',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
 
-        $imageName = null;
+    $imageName = null;
 
-        if ($request->hasFile('image')) {
-            $imageName = time() . '.' . $request->image->extension();
-            $request->image->move(public_path('uploads/maintenance'), $imageName);
-        }
+    if ($request->hasFile('image')) {
+        $imageName = time() . '.' . $request->image->extension();
+        $request->image->move(public_path('uploads/maintenance'), $imageName);
+    }
 
-        $job = MaintenanceJob::create([
-    'reported_by' => Auth::id(),
-    'department_id' => $request->department_id,
-    'assigned_to' => $request->assigned_to,
-    'title' => $request->title,
-    'description' => $request->description,
-    'location' => $request->location,
-    'room_number' => $request->room_number,
-    'image' => $imageName,
-    'priority' => $request->priority,
-    'status' => 'pending',
-    'reported_date' => now()->toDateString(),
-]);
-
-
-
-try {
-    $departmentNames = [
-        'Maintenance',
-        'manager',
-        'Reception',
-    ];
-
-    $departmentIds = Department::whereIn('name', $departmentNames)
-        ->pluck('id')
-        ->toArray();
-
-    // Also include the department selected in the task
-    $departmentIds[] = $job->department_id;
-
-    $departmentIds = array_unique($departmentIds);
-
-    $recipients = User::whereNotNull('email')
-        ->where(function ($query) use ($departmentIds) {
-            $query->whereIn('department_id', $departmentIds)
-                ->orWhereHas('role', function ($roleQuery) {
-                    $roleQuery->whereIn('name', [
-                        'Manager',
-                        'manager',
-                        'Department Manager',
-                        'department manager',
-                    ]);
-                });
-        })
-        ->get()
-        ->unique('email')
-        ->values();
+    $job = MaintenanceJob::create([
+        'reported_by' => Auth::id(),
+        'department_id' => $request->department_id,
+        'assigned_to' => $request->assigned_to,
+        'title' => $request->title,
+        'description' => $request->description,
+        'location' => $request->location,
+        'room_number' => $request->room_number,
+        'image' => $imageName,
+        'priority' => $request->priority,
+        'status' => 'pending',
+        'reported_date' => now()->toDateString(),
+    ]);
 
     $emailSentCount = 0;
+    $pushSentCount = 0;
 
-    foreach ($recipients as $user) {
-        Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
-        $emailSentCount++;
+    try {
+        $departmentNames = [
+            'Maintenance',
+            'manager',
+            'Reception',
+        ];
+
+        $departmentIds = Department::whereIn('name', $departmentNames)
+            ->pluck('id')
+            ->toArray();
+
+        $departmentIds[] = $job->department_id;
+        $departmentIds = array_unique($departmentIds);
+
+        $recipients = User::where(function ($query) use ($departmentIds) {
+                $query->whereIn('department_id', $departmentIds)
+                    ->orWhereHas('role', function ($roleQuery) {
+                        $roleQuery->whereIn('name', [
+                            'Manager',
+                            'manager',
+                            'Department Manager',
+                            'department manager',
+                        ]);
+                    });
+            })
+            ->get()
+            ->unique('id')
+            ->values();
+
+        foreach ($recipients as $user) {
+            if (!empty($user->email)) {
+                Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
+                $emailSentCount++;
+            }
+        }
+
+        $firebase = new FirebaseNotificationService();
+
+        foreach ($recipients->whereNotNull('fcm_token') as $user) {
+            $firebase->sendToToken(
+                $user->fcm_token,
+                'New Maintenance Job',
+                ($job->room_number ? 'Room ' . $job->room_number . ' - ' : '') . $job->title,
+                [
+                    'type' => 'maintenance',
+                    'job_id' => (string) $job->id,
+                    'priority' => (string) $job->priority,
+                ]
+            );
+
+            $pushSentCount++;
+        }
+
+    } catch (\Throwable $e) {
+        Log::error('Maintenance notification failed: ' . $e->getMessage());
     }
 
-} catch (\Throwable $e) {
-    Log::error('Maintenance email failed: ' . $e->getMessage());
+    return response()->json([
+        'success' => true,
+        'message' => 'Maintenance task added successfully.',
+        'emails_sent' => $emailSentCount,
+        'push_sent' => $pushSentCount,
+        'job' => $job,
+    ], 201);
 }
-return response()->json([
-    'success' => true,
-    'message' => 'Maintenance task added successfully.',
-    'emails_sent' => $emailSentCount ?? 0,
-    'job' => $job,
-], 201);
-    }
-
-    public function show(Request $request, $id)
-    {
-        $job = MaintenanceJob::with(['department', 'reporter', 'assignedUser'])
-            ->findOrFail($id);
-
-        return response()->json([
-            'success' => true,
-            'job' => $job,
-        ]);
-    }
-
     public function updateStatus(Request $request, $id)
     {
         $request->validate([

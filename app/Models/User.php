@@ -29,6 +29,8 @@ class User extends Authenticatable
         'role_id',
         'image',
         'department_id',
+        'fcm_token',
+
     ];
 
 
