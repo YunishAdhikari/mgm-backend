@@ -4,442 +4,637 @@
 
 <style>
 :root {
-    --bg-dark: #09090b;
-    --card-dark: #18181b;
-    --border-dark: #3f3f46;
-    --text-light: #fafafa;
-    --text-muted: #a1a1aa;
-    --red-brand: #dc2626;
-    --red-gradient: linear-gradient(135deg, #991b1b, #dc2626);
+    --bg: #09090b;
+    --card: #18181b;
+    --input: #27272a;
+    --border: #3f3f46;
+    --red: #dc2626;
+    --red-dark: #991b1b;
+    --text: #fafafa;
+    --muted: #a1a1aa;
+    --green: #22c55e;
 }
 
-/* Base UI Component Containers */
-.report-view-container {
+/* Base Wrapper Structuring */
+.index-forecast-wrapper {
     width: 100%;
     box-sizing: border-box;
 }
 
-.report-view-container .report-wrapper {
+.forecast-wrapper {
     padding: 30px;
-    background: var(--bg-dark);
+    background: var(--bg);
     min-height: 100vh;
-    color: var(--text-light);
+    color: var(--text);
 }
 
-.report-view-container .report-actions {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 25px;
-}
-
-.report-view-container .report-btn {
-    border: none;
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-weight: 800;
-    cursor: pointer;
-    text-decoration: none;
-    font-size: 14px;
-    transition: 0.2s;
-    display: inline-flex;
-    align-items: center;
-}
-
-.report-view-container .btn-print {
-    background: var(--red-gradient);
-    color: white;
-    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.2);
-}
-
-.report-view-container .btn-print:hover { opacity: 0.95; }
-
-.report-view-container .btn-back {
-    background: rgba(255, 255, 255, 0.05);
-    color: white;
-    border: 1px solid var(--border-dark);
-}
-
-.report-view-container .btn-back:hover { background: rgba(255, 255, 255, 0.1); }
-
-/* Premium Screen Paper Element Layout */
-.report-view-container .report-paper {
-    background: var(--card-dark);
-    padding: 40px;
+/* Workspace Banner Styling */
+.forecast-header {
+    background: linear-gradient(135deg, #991b1b, #dc2626);
     border-radius: 16px;
-    border: 1px solid var(--border-dark);
-}
-
-.report-view-container .report-header {
+    padding: 30px;
+    margin-bottom: 25px;
+    color: white;
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
-    border-bottom: 3px solid var(--text-light);
-    padding-bottom: 20px;
-    margin-bottom: 30px;
+    align-items: center;
+    gap: 20px;
 }
 
-.report-view-container .report-header h2 {
+.forecast-header h2 {
     margin: 0;
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 800;
     letter-spacing: -0.5px;
-    text-transform: uppercase;
 }
 
-.report-view-container .report-header p {
-    margin: 5px 0 0;
-    color: var(--text-muted);
-    font-size: 16px;
-    font-weight: 500;
+.forecast-header p {
+    margin: 6px 0 0;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
 }
 
-.report-view-container .report-meta-box {
-    text-align: right;
+.header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* System Button Architecture */
+.btn-dark-red,
+.btn-soft {
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-dark-red { background: #09090b; }
+.btn-dark-red:hover { background: #18181b; }
+.btn-soft { background: rgba(255, 255, 255, 0.1); }
+.btn-soft:hover { background: rgba(255, 255, 255, 0.18); }
+.btn-main { background: linear-gradient(135deg, #dc2626, #991b1b); border: none; }
+.btn-main:hover { opacity: 0.95; }
+
+/* Filter & Data Base Cards */
+.forecast-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 22px;
+}
+
+.alert-success-custom {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #4ade80;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Filter Component Controls */
+.filter-label {
+    color: var(--text);
     font-size: 13px;
-    color: var(--text-muted);
-    line-height: 1.6;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: block;
 }
 
-.report-view-container .report-meta-box strong { color: var(--text-light); }
+.filter-input {
+    width: 100%;
+    height: 46px;
+    background: var(--input);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 0 15px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
 
-/* Screen Table Settings */
-.report-view-container .report-table {
+.quick-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.quick-filter-btn {
+    background: var(--input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 16px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.quick-filter-btn:hover {
+    background: var(--border);
+}
+
+/* High-Contrast Unified Report Table Architecture */
+.report-table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.report-workspace-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
-    margin-top: 20px;
+    font-size: 14px;
+    text-align: left;
 }
 
-.report-view-container .report-table th {
-    background: #27272a;
-    color: var(--text-light) !important;
+.report-workspace-table th {
+    background: var(--input);
+    color: var(--text) !important;
     padding: 14px 12px;
     font-weight: 700;
     text-transform: uppercase;
     font-size: 12px;
     letter-spacing: 0.5px;
-    border: 1px solid var(--border-dark);
-    text-align: left;
+    border: 1px solid var(--border);
 }
 
-.report-view-container .report-table td {
+.report-workspace-table td {
     padding: 14px 12px;
-    border: 1px solid var(--border-dark);
+    border: 1px solid var(--border);
     color: #e4e4e7;
     vertical-align: middle;
 }
 
-.report-view-container .report-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
-.report-view-container .report-table tbody tr.summary-row { background: #27272a !important; font-weight: 700; }
-.report-view-container .report-table tbody tr.summary-row td {
-    border-top: 2px solid var(--text-light);
-    border-bottom: 2px solid var(--text-light);
-    color: var(--text-light);
+.report-workspace-table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.01);
 }
 
-.report-view-container .group-text { font-size: 13px; line-height: 1.4; color: #d4d4d8; }
-.report-view-container .no-group-msg { color: #71717a; font-style: italic; }
-.report-view-container .footer-note {
-    margin-top: 35px;
-    font-size: 12px;
-    color: var(--text-muted);
-    border-top: 1px dashed var(--border-dark);
-    padding-top: 15px;
-    line-height: 1.6;
-}
+/* Custom Typography and Badges */
+.day-text { font-weight: 700; color: #f87171; }
+.pax-count-bold { font-weight: 700; font-size: 15px; color: var(--text); }
+.pax-fit-highlight { font-weight: 700; font-size: 15px; color: #4ade80; }
+.group-list { color: #d4d4d8; font-size: 13px; line-height: 1.5; }
+.no-group { color: #71717a; font-style: italic; }
+.notes-text { color: var(--muted); font-size: 13px; line-height: 1.4; max-width: 180px; }
 
-@media (max-width: 768px) {
-    .report-view-container .report-wrapper { padding: 15px; }
-    .report-view-container .report-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-    .report-view-container .report-meta-box { text-align: left; }
+/* Action Control Array Elements */
+.action-btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.action-btn { padding: 8px 12px; border-radius: 8px; color: white; text-decoration: none; font-size: 12px; font-weight: 700; border: none; cursor: pointer; }
+.action-add { background: var(--red); }
+.action-edit { background: var(--input); border: 1px solid var(--border); }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-state h4 { color: var(--text); font-weight: 700; margin: 0 0 8px 0; }
+
+/* Modal Engine Configurations */
+.report-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+}
+.report-modal.show { display: flex; }
+.report-modal-box { width: 100%; max-width: 480px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; box-sizing: border-box; }
+.report-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+.report-modal-header h3 { margin: 0; color: var(--text); font-size: 20px; font-weight: 800; }
+.report-modal-close { width: 32px; height: 32px; border: none; border-radius: 50%; background: var(--input); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.report-form-group { margin-bottom: 18px; }
+.report-form-group label { color: var(--text); font-size: 13px; font-weight: 700; margin-bottom: 8px; display: block; }
+.report-form-group input, .report-form-group textarea { width: 100%; background: var(--input); border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 12px 14px; box-sizing: border-box; font-size: 14px; }
+.report-form-group input { height: 46px; }
+.report-modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.modal-cancel-btn, .modal-generate-btn { padding: 12px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; }
+.modal-cancel-btn { background: var(--input); color: var(--text); border: 1px solid var(--border); }
+.modal-generate-btn { background: linear-gradient(135deg, #dc2626, #991b1b); color: white; border: none; }
+
+@media(max-width: 768px) {
+    .forecast-wrapper { padding: 15px; }
+    .forecast-header { flex-direction: column; align-items: flex-start; padding: 20px; }
+    .header-actions { width: 100%; }
+    .btn-dark-red, .btn-soft { width: 100%; }
+    .report-modal-actions { flex-direction: column; }
+    .modal-cancel-btn, .modal-generate-btn { width: 100%; }
 }
 
 /* ==========================================================================
-   SOLID HIGH-CONTRAST MONOCHROME PRINT CONFIGURATION (Fixed for image_eac101.png Errors)
+   STRICT SINGLE-PAGE PRINT RULES (Optimized to completely prevent Page 2 spillover)
    ========================================================================== */
 @media print {
+    @page {
+        size: landscape;
+        margin: 0.3in 0.4in; /* Compact printable page margins */
+    }
+
+    html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        height: auto !important;
+        font-size: 11px !important; /* Globally downscales text just enough to fit one sheet */
+        overflow: hidden !important;
+    }
+
     body * {
         visibility: hidden !important;
     }
 
-    .report-view-container,
-    .report-view-container .report-wrapper,
-    .report-view-container .report-wrapper * {
+    /* Isolate wrapper container content */
+    .index-forecast-wrapper,
+    .index-forecast-wrapper .forecast-wrapper,
+    .index-forecast-wrapper .forecast-wrapper * {
         visibility: visible !important;
     }
 
-    .report-view-container {
+    .index-forecast-wrapper {
         position: absolute;
         left: 0;
         top: 0;
         width: 100% !important;
     }
 
-    .report-view-container .report-wrapper {
+    .forecast-wrapper {
         background: #ffffff !important;
-        color: #000000 !important;
         padding: 0 !important;
         min-height: auto !important;
     }
 
-    .report-view-container .report-actions {
+    /* Hide actionable interface menus */
+    .forecast-header,
+    .forecast-card:has(form),
+    .action-btn-group,
+    .alert-success-custom {
         display: none !important;
     }
 
-    .report-view-container .report-paper {
+    /* Transform the layout data container card */
+    .forecast-card {
         background: #ffffff !important;
-        color: #000000 !important;
-        box-shadow: none !important;
         border: none !important;
         padding: 0 !important;
+        margin: 0 !important;
     }
 
-    .report-view-container .report-header {
-        border-bottom: 3px solid #000000 !important;
-        padding-bottom: 12px !important;
-        margin-bottom: 25px !important;
+    /* Build a high-contrast print header dynamically */
+    .forecast-card::before {
+        content: "DINNER & BREAKFAST FORECAST\nMGM Muthu Glasgow River Hotel  |  Reception Workspace Log";
+        white-space: pre;
+        display: block;
+        font-size: 18px;
+        font-weight: 800;
+        color: #000000;
+        line-height: 1.3;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #000000;
+        padding-bottom: 8px;
     }
 
-    .report-view-container .report-header h2 {
-        color: #000000 !important;
-        font-size: 26px !important;
-        font-weight: 800 !important;
+    /* Compact and fit table precisely onto one page */
+    .report-table-container {
+        overflow: hidden !important;
+        width: 100% !important;
+        page-break-inside: avoid !important;
     }
 
-    .report-view-container .report-header p,
-    .report-view-container .report-meta-box {
-        color: #000000 !important;
-        font-size: 12px !important;
+    .report-workspace-table {
+        width: 100% !important;
+        border: 1px solid #000000 !important;
+        font-size: 11px !important;
     }
 
-    .report-view-container .report-meta-box strong {
-        color: #000000 !important;
-    }
-
-    /* Fixed Unified Print Layout Table Elements */
-    .report-view-container .report-table {
-        margin-top: 15px !important;
-        font-size: 12px !important;
-        border: 1px solid #1e293b !important;
-    }
-
-    /* Unified high-contrast typography matrix across headers */
-    .report-view-container .report-table th {
+    .report-workspace-table th {
         background: #f1f5f9 !important;
         color: #000000 !important;
-        border: 1px solid #1e293b !important;
-        padding: 10px 8px !important;
-        font-size: 11px !important;
+        border: 1px solid #000000 !important;
+        padding: 6px 6px !important; /* Tight padding to minimize layout height */
+        font-size: 10px !important;
         font-weight: 800 !important;
     }
 
-    /* Forcing all table text to uniform bold contrast values */
-    .report-view-container .report-table td {
+    .report-workspace-table td {
         color: #000000 !important;
-        border: 1px solid #1e293b !important;
-        padding: 10px 8px !important;
+        border: 1px solid #000000 !important;
+        padding: 6px 6px !important; /* Extra tight cell height */
         font-weight: 600 !important;
+        background: transparent !important;
     }
 
-    .report-view-container .report-table td strong {
-        font-weight: 800 !important;
+    .report-workspace-table tbody tr:nth-child(even) {
+        background: #f8fafc !important; /* Clean printable alternating row contrast */
     }
 
-    .report-view-container .report-table tbody tr:nth-child(even) {
-        background: #f8fafc !important;
+    /* Force visibility adjustments to labels */
+    .day-text { color: #000000 !important; font-weight: 600 !important; }
+    .pax-count-bold, .pax-fit-highlight { color: #000000 !important; font-weight: 700 !important; }
+    .group-list { color: #000000 !important; font-size: 10.5px !important; line-height: 1.3; }
+    .no-group { color: #475569 !important; font-style: normal !important; }
+    
+    /* Dynamically hide action container columns to protect horizontal room */
+    .report-workspace-table th:last-child,
+    .report-workspace-table td:last-child {
+        display: none !important;
     }
 
-    /* Double-Line Accounting Summary Block styling */
-    .report-view-container .report-table tbody tr.summary-row {
-        background: #f1f5f9 !important;
-    }
-
-    .report-view-container .report-table tbody tr.summary-row td {
-        border-top: 2px solid #000000 !important;
-        border-bottom: 4px double #000000 !important;
-        color: #000000 !important;
-        font-weight: 800 !important;
-    }
-
-    .report-view-container .group-text {
-        color: #000000 !important;
-        font-weight: 600 !important;
-    }
-
-    .report-view-container .no-group-msg {
-        color: #475569 !important;
-        font-style: normal !important;
-        font-weight: 500 !important;
-    }
-
-    .report-view-container .footer-note {
-        color: #000000 !important;
-        border-top: 1px solid #000000 !important;
-        margin-top: 30px !important;
-        font-size: 11px !important;
+    /* Print Footer Disclaimer Section placement */
+    .forecast-card::after {
+        content: "Statement Note: This ledger index is automatically calculated by the MGM Operations Processing Engine. Group allocations are extracted dynamically via group stay package profiles, contract windows, and arrival matrices. Confidential Document — Internal Hotel Operations Verification Only.";
+        display: block;
+        font-size: 9px;
+        color: #334155;
+        border-top: 1px dashed #000000;
+        margin-top: 20px;
+        padding-top: 8px;
+        line-height: 1.4;
+        page-break-inside: avoid !important;
     }
 }
 </style>
 
-<div class="report-view-container">
-    <div class="report-wrapper">
+<div class="index-forecast-wrapper">
+    <div class="forecast-wrapper">
 
-        <div class="report-actions">
-            <a href="{{ route('reception.meal-forecasts.index') }}" class="report-btn btn-back">
-                ← Return to Workspace
-            </a>
+        <div class="forecast-header">
+            <div>
+                <h2>Dinner & Breakfast Forecast</h2>
+                <p>Daily meal forecast report for Reception, F&B and Kitchen.</p>
+            </div>
 
-            <button onclick="window.print()" class="report-btn btn-print">
-                🖨️ Print Statement / Export PDF
-            </button>
+            <div class="header-actions">
+                <button type="button" class="btn-soft" onclick="openReportModal()">
+                    Generate Report
+                </button>
+
+                <button type="button" class="btn-dark-red" onclick="openDailyForecastModal()">
+                    + Add Daily Forecast
+                </button>
+            </div>
         </div>
 
-        <div class="report-paper">
+        <div class="forecast-card">
+            <form method="GET" action="{{ route('reception.meal-forecasts.index') }}">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="filter-label">From Date</label>
+                        <input type="date" name="from_date" value="{{ request('from_date') }}" class="filter-input">
+                    </div>
 
-            <!-- Executive Header Structure -->
-            <div class="report-header">
-                <div>
-                    <h2>Dinner & Breakfast Forecast</h2>
-                    <p>MGM Muthu Glasgow River Hotel</p>
+                    <div class="col-md-4">
+                        <label class="filter-label">To Date</label>
+                        <input type="date" name="to_date" value="{{ request('to_date') }}" class="filter-input">
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="header-actions">
+                            <button type="submit" class="btn-soft btn-main">Filter Workspace</button>
+                            <a href="{{ route('reception.meal-forecasts.index') }}" class="btn-soft">Reset Parameters</a>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="report-meta-box">
-                    <strong>Report Period:</strong> {{ \Carbon\Carbon::parse($fromDate)->format('d/m/Y') }} – {{ \Carbon\Carbon::parse($toDate)->format('d/m/Y') }}<br>
-                    <strong>Execution Timestamp:</strong> {{ now()->format('d/m/Y H:i') }}<br>
-                    <strong>System Identity:</strong> Reception Ledger
+                <div class="quick-filter-row">
+                    <a class="quick-filter-btn" href="{{ route('reception.meal-forecasts.index', ['from_date'=>now()->format('Y-m-d'),'to_date'=>now()->format('Y-m-d')]) }}">Today</a>
+                    <a class="quick-filter-btn" href="{{ route('reception.meal-forecasts.index', ['from_date'=>now()->addDay()->format('Y-m-d'),'to_date'=>now()->addDay()->format('Y-m-d')]) }}">Tomorrow</a>
+                    <a class="quick-filter-btn" href="{{ route('reception.meal-forecasts.index', ['from_date'=>now()->format('Y-m-d'),'to_date'=>now()->addDays(7)->format('Y-m-d')]) }}">Next 7 Days</a>
+                    <a class="quick-filter-btn" href="{{ route('reception.meal-forecasts.index', ['from_date'=>now()->startOfMonth()->format('Y-m-d'),'to_date'=>now()->endOfMonth()->format('Y-m-d')]) }}">This Month</a>
                 </div>
+            </form>
+        </div>
+
+        @if(session('success'))
+            <div class="alert-success-custom">{{ session('success') }}</div>
+        @endif
+
+        <div class="forecast-card">
+            @if($forecasts->isNotEmpty())
+                <div class="report-table-container">
+                    <table class="report-workspace-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 10%;">Date</th>
+                                <th style="width: 10%;">Day</th>
+                                <th style="width: 9%;">B/F Total</th>
+                                <th style="width: 23%;">B/F Group Allocation</th>
+                                <th style="width: 9%;">B/F FIT</th>
+                                <th style="width: 9%;">Dinner</th>
+                                <th style="width: 23%;">Dinner Group Allocation</th>
+                                <th style="width: 9%;">Dinner FIT</th>
+                                <th style="width: 10%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($forecasts as $forecast)
+                                @php
+                                    $forecastDate = $forecast->forecast_date;
+
+                                    $bfGroupTotal = 0;
+                                    $dnGroupTotal = 0;
+                                    $bfGroupList = [];
+                                    $dnGroupList = [];
+
+                                    foreach ($forecast->groups as $groupStay) {
+                                        $checkIn = $groupStay->check_in_date;
+                                        $checkOut = $groupStay->check_out_date;
+                                        $pax = $groupStay->pax;
+                                        $package = $groupStay->package_type;
+                                        $name = optional($groupStay->forecastGroup)->name ?? 'Unknown Group';
+
+                                        $hasBreakfast = false;
+                                        $hasDinner = false;
+
+                                        if (($package === 'bb' || $package === 'dbb')
+                                            && $forecastDate->gt($checkIn)
+                                            && $forecastDate->lte($checkOut)) {
+                                            $hasBreakfast = true;
+                                        }
+
+                                        if (($package === 'dinner_only' || $package === 'dbb')
+                                            && $forecastDate->gte($checkIn)
+                                            && $forecastDate->lt($checkOut)) {
+                                            $hasDinner = true;
+                                        }
+
+                                        if ($hasBreakfast) {
+                                            $bfGroupTotal += $pax;
+                                            $bfGroupList[] = $name . ' (' . $pax . ')';
+                                        }
+
+                                        if ($hasDinner) {
+                                            $dnGroupTotal += $pax;
+                                            $dnGroupList[] = $name . ' (' . $pax . ')';
+                                        }
+                                    }
+
+                                    $bfFit = $forecast->total_breakfast - $bfGroupTotal;
+                                    $dnFit = $forecast->total_dinner - $dnGroupTotal;
+
+                                    $bfGroups = implode(', ', $bfGroupList);
+                                    $dnGroups = implode(', ', $dnGroupList);
+                                @endphp
+
+                                <tr>
+                                    <td><strong>{{ $forecast->forecast_date->format('d/m/Y') }}</strong></td>
+                                    <td><span class="day-text">{{ $forecast->forecast_date->format('l') }}</span></td>
+                                    <td><span class="pax-count-bold">{{ $forecast->total_breakfast }}</span></td>
+                                    <td>
+                                        @if($bfGroups)
+                                            <div class="group-list">{{ $bfGroups }}</div>
+                                        @else
+                                            <span class="no-group">No Group</span>
+                                        @endif
+                                    </td>
+                                    <td><span class="pax-fit-highlight">{{ $bfFit }}</span></td>
+                                    <td><span class="pax-count-bold">{{ $forecast->total_dinner }}</span></td>
+                                    <td>
+                                        @if($dnGroups)
+                                            <div class="group-list">{{ $dnGroups }}</div>
+                                        @else
+                                            <span class="no-group">No Group</span>
+                                        @endif
+                                    </td>
+                                    <td><span class="pax-fit-highlight">{{ $dnFit }}</span></td>
+                                    <td>
+                                        <div class="action-btn-group">
+                                            <a href="{{ route('reception.meal-forecasts.groups.create', $forecast->id) }}" class="action-btn action-add">
+                                                + Group
+                                            </a>
+                                            <button type="button"
+                                                    class="action-btn action-edit"
+                                                    onclick="openDailyForecastModal(
+                                                        '{{ $forecast->forecast_date->format('Y-m-d') }}',
+                                                        '{{ $forecast->total_breakfast }}',
+                                                        '{{ $forecast->total_dinner }}',
+                                                        @js($forecast->notes)
+                                                    )">
+                                                Edit
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="empty-state">
+                    <h4>No forecast added yet</h4>
+                    <p>Create the first daily dinner and breakfast forecast parameters above.</p>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <div id="dailyForecastModal" class="report-modal">
+        <div class="report-modal-box">
+            <div class="report-modal-header">
+                <h3 id="dailyModalTitle">Add Daily Forecast</h3>
+                <button type="button" class="report-modal-close" onclick="closeDailyForecastModal()">×</button>
             </div>
 
-            @php
-                $totalBreakfast = 0;
-                $totalDinner = 0;
-                $totalGroupBreakfast = 0;
-                $totalGroupDinner = 0;
-                $totalFitBreakfast = 0;
-                $totalFitDinner = 0;
-            @endphp
+            <form action="{{ route('reception.meal-forecasts.store-daily-total') }}" method="POST">
+                @csrf
+                <div class="report-form-group">
+                    <label>Forecast Date</label>
+                    <input type="date" id="daily_forecast_date" name="forecast_date" required>
+                </div>
+                <div class="report-form-group">
+                    <label>Total Breakfast Pax</label>
+                    <input type="number" id="daily_total_breakfast" name="total_breakfast" min="0" value="0" required>
+                </div>
+                <div class="report-form-group">
+                    <label>Total Dinner Pax</label>
+                    <input type="number" id="daily_total_dinner" name="total_dinner" min="0" value="0" required>
+                </div>
+                <div class="report-form-group">
+                    <label>Notes</label>
+                    <textarea id="daily_notes" name="notes" rows="3"></textarea>
+                </div>
+                <div class="report-modal-actions">
+                    <button type="button" onclick="closeDailyForecastModal()" class="modal-cancel-btn">Cancel</button>
+                    <button type="submit" class="modal-generate-btn">Save Forecast</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-            <table class="report-table">
-                <thead>
-                    <tr>
-                        <th style="width: 11%;">Date</th>
-                        <th style="width: 10%;">Day</th>
-                        <th style="width: 10%;">B/F Total</th>
-                        <th style="width: 21%;">B/F Groups Allocation</th>
-                        <th style="width: 9%;">B/F FIT</th>
-                        <th style="width: 11%;">Dinner Total</th>
-                        <th style="width: 21%;">Dinner Groups Allocation</th>
-                        <th style="width: 8%;">Dinner FIT</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @forelse($forecasts as $forecast)
-                        @php
-                            $forecastDate = $forecast->forecast_date;
-
-                            $bfGroupTotal = 0;
-                            $dnGroupTotal = 0;
-
-                            $bfGroupList = [];
-                            $dnGroupList = [];
-
-                            foreach ($groupStays as $groupStay) {
-                                $checkIn = $groupStay->check_in_date;
-                                $checkOut = $groupStay->check_out_date;
-                                $package = $groupStay->package_type;
-                                $pax = $groupStay->pax;
-                                $name = optional($groupStay->forecastGroup)->name ?? 'Unknown Group';
-
-                                $hasBreakfast = false;
-                                $hasDinner = false;
-
-                                if (($package === 'bb' || $package === 'dbb')
-                                    && $forecastDate->gt($checkIn)
-                                    && $forecastDate->lte($checkOut)) {
-                                    $hasBreakfast = true;
-                                }
-
-                                if (($package === 'dinner_only' || $package === 'dbb')
-                                    && $forecastDate->gte($checkIn)
-                                    && $forecastDate->lt($checkOut)) {
-                                    $hasDinner = true;
-                                }
-
-                                if ($hasBreakfast) {
-                                    $bfGroupTotal += $pax;
-                                    $bfGroupList[] = $name . ' (' . $pax . ')';
-                                }
-
-                                if ($hasDinner) {
-                                    $dnGroupTotal += $pax;
-                                    $dnGroupList[] = $name . ' (' . $pax . ')';
-                                }
-                            }
-
-                            $bfFit = $forecast->total_breakfast - $bfGroupTotal;
-                            $dnFit = $forecast->total_dinner - $dnGroupTotal;
-
-                            $totalBreakfast += $forecast->total_breakfast;
-                            $totalDinner += $forecast->total_dinner;
-                            $totalGroupBreakfast += $bfGroupTotal;
-                            $totalGroupDinner += $dnGroupTotal;
-                            $totalFitBreakfast += $bfFit;
-                            $totalFitDinner += $dnFit;
-
-                            $bfGroups = implode(', ', $bfGroupList);
-                            $dnGroups = implode(', ', $dnGroupList);
-                        @endphp
-
-                        <tr>
-                            <td><strong>{{ $forecast->forecast_date->format('d/m/Y') }}</strong></td>
-                            <td>{{ $forecast->forecast_date->format('l') }}</td>
-                            <td>{{ $forecast->total_breakfast }}</td>
-                            <td class="group-text">
-                                @if($bfGroups)
-                                    {{ $bfGroups }}
-                                @else
-                                    <span class="no-group-msg">No Groups Allocated</span>
-                                @endif
-                            </td>
-                            <td>{{ $bfFit }}</td>
-                            <td>{{ $forecast->total_dinner }}</td>
-                            <td class="group-text">
-                                @if($dnGroups)
-                                    {{ $dnGroups }}
-                                @else
-                                    <span class="no-group-msg">No Groups Allocated</span>
-                                @endif
-                            </td>
-                            <td>{{ $dnFit }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" style="text-align:center; padding: 40px 0; color: var(--text-muted);">
-                                No processing forecasts discovered within the specified parameters.
-                            </td>
-                        </tr>
-                    @endforelse
-
-                    <!-- Consolidated Summary Balance Footer Row -->
-                    <tr class="summary-row">
-                        <td colspan="2" style="text-align: right; text-transform: uppercase; letter-spacing: 0.5px;">Summary Totals:</td>
-                        <td>{{ $totalBreakfast }}</td>
-                        <td>{{ $totalGroupBreakfast }} <span style="font-size:11px; font-weight:normal; opacity:0.85;">(Group)</span></td>
-                        <td>{{ $totalFitBreakfast }} <span style="font-size:11px; font-weight:normal; opacity:0.85;">(FIT)</span></td>
-                        <td>{{ $totalDinner }}</td>
-                        <td>{{ $totalGroupDinner }} <span style="font-size:11px; font-weight:normal; opacity:0.85;">(Group)</span></td>
-                        <td>{{ $totalFitDinner }} <span style="font-size:11px; font-weight:normal; opacity:0.85;">(FIT)</span></td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div class="footer-note">
-                <strong>Statement Note:</strong> This ledger index is automatically calculated by the MGM Operations Processing Engine. Group allocations are extracted dynamically via group stay package profiles, contract windows, and arrival matrices. Confidential Document — Internal Hotel Operations Verification Only.
+    <div id="reportModal" class="report-modal">
+        <div class="report-modal-box">
+            <div class="report-modal-header">
+                <h3>Generate Forecast Report</h3>
+                <button type="button" class="report-modal-close" onclick="closeReportModal()">×</button>
             </div>
 
+            <form action="{{ route('reception.meal-forecasts.report') }}" method="GET">
+                <div class="report-form-group">
+                    <label>From Date</label>
+                    <input type="date" name="from_date" required>
+                </div>
+                <div class="report-form-group">
+                    <label>To Date</label>
+                    <input type="date" name="to_date" required>
+                </div>
+                <div class="report-modal-actions">
+                    <button type="button" onclick="closeReportModal()" class="modal-cancel-btn">Cancel</button>
+                    <button type="submit" class="modal-generate-btn">Generate Report</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+function openDailyForecastModal(date = '', breakfast = 0, dinner = 0, notes = '') {
+    document.getElementById('dailyModalTitle').innerText = date ? 'Edit Daily Forecast' : 'Add Daily Forecast';
+    document.getElementById('daily_forecast_date').value = date;
+    document.getElementById('daily_total_breakfast').value = breakfast;
+    document.getElementById('daily_total_dinner').value = dinner;
+    document.getElementById('daily_notes').value = notes ?? '';
+    document.getElementById('dailyForecastModal').classList.add('show');
+}
+
+function closeDailyForecastModal(){
+    document.getElementById('dailyForecastModal').classList.remove('show');
+}
+
+function openReportModal(){
+    document.getElementById('reportModal').classList.add('show');
+}
+
+function closeReportModal(){
+    document.getElementById('reportModal').classList.remove('show');
+}
+
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+        closeDailyForecastModal();
+        closeReportModal();
+    }
+});
+
+document.getElementById('dailyForecastModal').addEventListener('click', function(e){
+    if(e.target === this){ closeDailyForecastModal(); }
+});
+
+document.getElementById('reportModal').addEventListener('click', function(e){
+    if(e.target === this){ closeReportModal(); }
+});
+</script>
 
 @endsection
