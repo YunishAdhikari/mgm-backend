@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>MGM Ops | Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="{{ asset('myapp.png') }}">
+
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
