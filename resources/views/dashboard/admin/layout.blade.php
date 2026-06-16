@@ -619,6 +619,11 @@
           <i class="fas fa-clock"></i>
           <span>Timing</span>
         </a>
+
+         <a href="{{ route('forecast-groups.index') }}" class="menu-item {{ request()->routeIs('forecast-groups.index') ? 'active' : '' }}">
+          <i class="fas fa-users"></i>
+          <span>Groups</span>
+        </a>
       </div>
 
       <!-- Room Management -->

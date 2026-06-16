@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Reception Dashboard') - MGRH</title>
+  <link rel="icon" type="image/png" href="{{ asset('myapp.png') }}">
+
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -535,6 +537,10 @@
                 <a href="{{ route('reception.room-status.index') }}" class="nav-link">
                     <span class="nav-icon"><i class="fa-solid fa-broom"></i></span>
                     <span>Housekeeping</span>
+                </a>
+                <a href="{{ route('reception.meal-forecasts.index') }}" class="nav-link">
+                    <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
+                    <span>Groups</span>
                 </a>
             </div>
         </nav>

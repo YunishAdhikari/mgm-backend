@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ForecastGroupController;
 use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\MobileAppVersionController;
 use App\Http\Controllers\Admin\NewsController;
@@ -32,6 +33,7 @@ use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\ManagerReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Reception\GroupBuffetBookingController;
+use App\Http\Controllers\Reception\MealForecastController;
 use App\Http\Controllers\Reception\RoomStatusController;
 use App\Http\Controllers\ReceptionDashboardController;
 use App\Http\Controllers\RestaurantBookingController;
@@ -150,6 +152,12 @@ use App\Services\FirebaseNotificationService;
         Route::post('/mobile-app-versions', [MobileAppVersionController::class, 'store'])->name('mobile-app-versions.store');
         Route::patch('/mobile-app-versions/{version}/mark-latest', [MobileAppVersionController::class, 'markLatest'])->name('mobile-app-versions.mark-latest');
         Route::delete('/mobile-app-versions/{version}', [MobileAppVersionController::class, 'destroy'])->name('mobile-app-versions.destroy');
+
+        Route::get('/forecast-groups', [ForecastGroupController::class, 'index'])->name('forecast-groups.index');
+        Route::post('/forecast-groups', [ForecastGroupController::class, 'store'])->name('forecast-groups.store');
+        Route::put('/forecast-groups/{forecastGroup}', [ForecastGroupController::class, 'update'])->name('forecast-groups.update');
+        Route::delete('/forecast-groups/{forecastGroup}', [ForecastGroupController::class, 'destroy'])->name('forecast-groups.destroy');
+
     });
 
     // --- KITCHEN SUPERVISOR ROUTES ---
@@ -268,6 +276,14 @@ use App\Services\FirebaseNotificationService;
         Route::post('/group-buffets',[GroupBuffetBookingController::class, 'store'])->name('group-buffets.store');
         Route::put('/reception/group-buffets/{groupBuffet}', [GroupBuffetBookingController::class, 'update'])->name('group-buffets.update');
         Route::get('/reception/group-buffets-report', [GroupBuffetBookingController::class, 'dailyReport'])->name('group-buffets.daily-report');
+
+        Route::get('/meal-forecasts', [MealForecastController::class, 'index'])->name('meal-forecasts.index');
+        Route::post('/meal-forecasts/daily-total', [MealForecastController::class, 'storeOrUpdateDailyTotal'])->name('meal-forecasts.store-daily-total');
+        Route::delete('/meal-forecasts/groups/{mealForecastGroup}', [MealForecastController::class, 'destroyGroup'])->name('meal-forecasts.groups.destroy');
+        Route::get('/meal-forecasts/{mealForecast}/groups/create', [MealForecastController::class, 'createGroup'])->name('meal-forecasts.groups.create');
+        Route::post('/meal-forecasts/{mealForecast}/groups', [MealForecastController::class, 'storeGroup'])->name('meal-forecasts.groups.store');
+        Route::get('/meal-forecasts/report', [MealForecastController::class, 'report'])->name('meal-forecasts.report');
+ 
     });
 
 
