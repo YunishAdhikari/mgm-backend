@@ -119,6 +119,16 @@
     padding-top:12px;
 }
 
+.report-logo{
+    height:70px;
+}
+
+@media print{
+    .report-logo{
+        height:60px;
+    }
+}
+
 @media print{
     body *{
         visibility:hidden;
@@ -178,10 +188,24 @@
     <div class="report-paper">
 
         <div class="report-header">
-            <div>
-                <h2>Dinner and Breakfast Forecast</h2>
-                <p>MGM Muthu Glasgow River Hotel</p>
-            </div>
+
+    <div style="display:flex;align-items:center;gap:20px;">
+
+        <img src="{{ asset('images/mgm-logo.png') }}"
+             alt="MGM Logo"
+             style="height:70px;">
+
+        <div>
+            <h2 style="margin:0;">
+                Dinner & Breakfast Forecast
+            </h2>
+
+            <p style="margin:5px 0 0;">
+                MGM Muthu Glasgow River Hotel
+            </p>
+        </div>
+
+    </div>
 
             <div>
                 <strong>From:</strong> {{ \Carbon\Carbon::parse($fromDate)->format('d/m/Y') }}<br>
