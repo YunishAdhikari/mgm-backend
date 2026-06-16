@@ -5,9 +5,9 @@
 
 @section('content')
 
-<section class="card employee-card">
+<section class="employee-card">
 
-    <div class="card-header employee-header">
+    <div class="employee-header">
         <div>
             <h2>
                 <i class="fas fa-users"></i>
@@ -67,7 +67,7 @@
             <tbody id="employee-table-body">
                 @forelse($users as $user)
                     <tr>
-                        <td>
+                        <td data-label="Employee">
                             <div class="emp-info">
                                 @if($user->image)
                                     <img src="{{ asset('storage/' . $user->image) }}" alt="{{ $user->name }}">
@@ -83,29 +83,33 @@
                             </div>
                         </td>
 
-                        <td><span class="email-text">{{ $user->email }}</span></td>
+                        <td data-label="Email">
+                            <span class="email-text">{{ $user->email }}</span>
+                        </td>
 
-                        <td>
+                        <td data-label="Position">
                             <span class="role-badge">
                                 {{ ucfirst($user->role->name ?? 'N/A') }}
                             </span>
                         </td>
 
-                        <td><span class="dept-text">{{ $user->department->name ?? 'N/A' }}</span></td>
+                        <td data-label="Department">
+                            <span class="dept-text">{{ $user->department->name ?? 'N/A' }}</span>
+                        </td>
 
-                        <td>
+                        <td data-label="Start Date">
                             <span class="date-text">
                                 {{ $user->created_at ? $user->created_at->format('d M Y') : 'N/A' }}
                             </span>
                         </td>
 
-                        <td>
+                        <td data-label="Status">
                             <span class="status-badge {{ ($user->status ?? 'active') === 'active' ? 'active' : 'inactive' }}">
                                 {{ ucfirst($user->status ?? 'active') }}
                             </span>
                         </td>
 
-                        <td>
+                        <td data-label="Actions">
                             <div class="action-buttons">
                                 <form method="POST" action="{{ route('admin.users.status', $user->id) }}">
                                     @csrf
@@ -147,7 +151,8 @@
 
 <style>
 :root {
-    --bg-card: #27272a;
+    --bg-card: #18181b;
+    --bg-row: #1f1f23;
     --bg-input: #1c1c1f;
     --text-main: #fafafa;
     --text-muted: #a1a1aa;
@@ -159,11 +164,12 @@
 }
 
 .employee-card {
-    background: #18181b;
+    background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 22px;
     padding: 24px;
     box-shadow: 0 12px 35px rgba(0,0,0,.35);
+    overflow: hidden;
 }
 
 .employee-header {
@@ -213,6 +219,7 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    white-space: nowrap;
 }
 
 .add-employee-btn:hover {
@@ -288,7 +295,6 @@
 }
 
 .loading-indicator {
-    display: none;
     align-items: center;
     justify-content: center;
     gap: 12px;
@@ -318,7 +324,7 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 1000px;
+    min-width: 980px;
 }
 
 .data-table thead {
@@ -333,6 +339,7 @@
     text-transform: uppercase;
     text-align: left;
     border-bottom: 1px solid var(--border);
+    white-space: nowrap;
 }
 
 .data-table td {
@@ -441,12 +448,11 @@
     color: var(--text-dim);
 }
 
-/* FIXED PAGINATION */
+/* PAGINATION */
 .employee-pagination-wrapper {
     margin-top: 24px;
     display: flex;
     justify-content: center;
-    align-items: center;
     width: 100%;
 }
 
@@ -515,14 +521,26 @@
     font-size: 14px;
 }
 
-@media (max-width: 768px) {
+/* MOBILE CARD VIEW */
+@media (max-width: 900px) {
+    .employee-card {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
     .employee-header {
         flex-direction: column;
         align-items: stretch;
     }
 
+    .employee-header h2 {
+        font-size: 24px;
+        flex-wrap: wrap;
+    }
+
     .add-employee-btn {
         justify-content: center;
+        width: 100%;
     }
 
     .search-box {
@@ -535,9 +553,87 @@
         width: 100%;
     }
 
+    .table-wrapper {
+        border: none;
+        overflow: visible;
+        border-radius: 0;
+    }
+
+    .data-table {
+        min-width: 0;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 14px;
+    }
+
+    .data-table thead {
+        display: none;
+    }
+
+    .data-table,
+    .data-table tbody,
+    .data-table tr,
+    .data-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .data-table tr {
+        background: var(--bg-row);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 16px;
+    }
+
+    .data-table td {
+        border: none;
+        padding: 10px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        color: var(--text-main);
+    }
+
+    .data-table td::before {
+        content: attr(data-label);
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        flex-shrink: 0;
+    }
+
+    .data-table td:first-child {
+        display: block;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+
+    .data-table td:first-child::before {
+        display: none;
+    }
+
+    .emp-info {
+        justify-content: flex-start;
+    }
+
+    .email-text,
+    .dept-text,
+    .date-text {
+        max-width: 58vw;
+        text-align: right;
+    }
+
+    .action-buttons {
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
     .employee-pagination-wrapper nav > div {
         flex-direction: column;
         justify-content: center;
+        text-align: center;
     }
 }
 </style>
