@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function debounce(func, wait) {
         let timeout;
         return function(...args) {
-            clearTimeout(timeout);
+            clearInterval(timeout);
             timeout = setTimeout(() => func(...args), wait);
         };
     }
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
     resetBtn.addEventListener('click', () => { searchInput.value = ''; performSearch(); });
 
     document.addEventListener('click', function(e) {
-        const paginationLink = e.target.closest('.pagination a');
+        const paginationLink = e.target.closest('.pagination a') || e.target.closest('.pagination-wrapper nav a');
         if (paginationLink) {
             e.preventDefault();
             loading.style.display = 'flex';
@@ -454,13 +454,100 @@ document.addEventListener('DOMContentLoaded', function() {
 
     .empty-cell i { font-size: 40px; margin-bottom: 12px; display: block; }
 
-    .pagination-wrapper { margin-top: 24px; display: flex; justify-content: flex-end; }
+    /* Fixes for Laravel Native Pagination Rendering */
+    .pagination-wrapper { 
+        margin-top: 24px; 
+        display: flex; 
+        justify-content: flex-end; 
+    }
+
+    .pagination-wrapper nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .pagination-wrapper nav div p {
+        color: var(--text-muted);
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .pagination-wrapper nav > div {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .pagination-wrapper .pagination,
+    .pagination-wrapper nav span[role="navigation"],
+    .pagination-wrapper nav div:last-child {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .pagination-wrapper nav svg {
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .pagination-wrapper nav a,
+    .pagination-wrapper nav span.page-link,
+    .pagination-wrapper nav [aria-current="page"] span,
+    .pagination-wrapper nav [disabled] span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-main);
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .pagination-wrapper nav a:hover {
+        border-color: var(--primary);
+        color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+    .pagination-wrapper nav [aria-current="page"] span,
+    .pagination-wrapper nav .active span {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #ffffff;
+    }
+
+    .pagination-wrapper nav [disabled] span,
+    .pagination-wrapper nav .disabled span {
+        opacity: 0.4;
+        cursor: not-allowed;
+        background: transparent;
+    }
 
     @media (max-width: 768px) {
         .employee-header { flex-direction: column; align-items: stretch; }
         .add-employee-btn { justify-content: center; }
         .search-box { flex-direction: column; }
         .search-input, .search-btn, .reset-btn { width: 100%; }
+        .pagination-wrapper nav { justify-content: center; flex-direction: column; text-align: center; }
+        .pagination-wrapper nav > div { flex-direction: column; gap: 12px; }
     }
 </style>
 
