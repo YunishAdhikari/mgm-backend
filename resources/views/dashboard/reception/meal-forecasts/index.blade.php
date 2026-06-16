@@ -3,287 +3,383 @@
 @section('content')
 
 <style>
-:root{
-    --bg:#09090b;
-    --card:#18181b;
-    --input:#27272a;
-    --border:#3f3f46;
-    --red:#dc2626;
-    --red-dark:#991b1b;
-    --text:#fafafa;
-    --muted:#a1a1aa;
-    --green:#22c55e;
+:root {
+    --bg: #09090b;
+    --card: #18181b;
+    --input: #27272a;
+    --border: #3f3f46;
+    --red: #dc2626;
+    --red-dark: #991b1b;
+    --text: #fafafa;
+    --muted: #a1a1aa;
+    --green: #22c55e;
 }
 
-.index-forecast-wrapper{width:100%;box-sizing:border-box;}
-.forecast-wrapper{padding:30px;}
-
-.forecast-header{
-    background:linear-gradient(135deg,#991b1b,#dc2626);
-    border-radius:22px;
-    padding:30px;
-    margin-bottom:25px;
-    color:white;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:20px;
+/* Base Wrapper Structuring */
+.index-forecast-wrapper {
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.forecast-header h2{margin:0;font-size:32px;font-weight:900;}
-.forecast-header p{margin:8px 0 0;color:rgba(255,255,255,.8);}
+.forecast-wrapper {
+    padding: 30px;
+    background: var(--bg);
+    min-height: 100vh;
+    color: var(--text);
+}
 
-.header-actions{display:flex;gap:12px;flex-wrap:wrap;}
+/* Workspace Banner Styling */
+.forecast-header {
+    background: linear-gradient(135deg, #991b1b, #dc2626);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 25px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
 
+.forecast-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.forecast-header p {
+    margin: 6px 0 0;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* System Button Architecture */
 .btn-dark-red,
-.btn-soft{
-    color:white;
-    padding:13px 20px;
-    border-radius:14px;
-    font-weight:800;
-    text-decoration:none;
-    border:1px solid rgba(255,255,255,.2);
-    cursor:pointer;
+.btn-soft {
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.btn-dark-red{background:#09090b;}
-.btn-soft{background:rgba(255,255,255,.12);}
-.btn-main{background:linear-gradient(135deg,#dc2626,#991b1b);border:none;}
+.btn-dark-red { background: #09090b; }
+.btn-dark-red:hover { background: #18181b; }
+.btn-soft { background: rgba(255, 255, 255, 0.1); }
+.btn-soft:hover { background: rgba(255, 255, 255, 0.18); }
+.btn-main { background: linear-gradient(135deg, #dc2626, #991b1b); border: none; }
+.btn-main:hover { opacity: 0.95; }
 
-.forecast-card{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:22px;
-    padding:24px;
-    margin-bottom:22px;
+/* Filter & Data Base Cards */
+.forecast-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 22px;
 }
 
-.alert-success-custom{
-    background:rgba(34,197,94,.15);
-    border:1px solid rgba(34,197,94,.35);
-    color:#22c55e;
-    border-radius:14px;
-    padding:14px 18px;
-    margin-bottom:20px;
-    font-weight:700;
+.alert-success-custom {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #4ade80;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 14px;
 }
 
-.filter-label{
-    color:#a1a1aa;
-    font-size:13px;
-    font-weight:800;
-    margin-bottom:8px;
-    display:block;
+/* Filter Component Controls */
+.filter-label {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: block;
 }
 
-.filter-input{
-    width:100%;
-    height:50px;
-    background:#27272a;
-    border:1px solid #3f3f46;
-    color:#fafafa;
-    border-radius:14px;
-    padding:0 15px;
+.filter-input {
+    width: 100%;
+    height: 46px;
+    background: var(--input);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 0 15px;
+    box-sizing: border-box;
+    font-size: 14px;
 }
 
-.quick-filter-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
-
-.quick-filter-btn{
-    background:#27272a;
-    color:#fafafa;
-    border:1px solid #3f3f46;
-    border-radius:999px;
-    padding:9px 14px;
-    text-decoration:none;
-    font-size:13px;
-    font-weight:800;
+.quick-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.forecast-grid-header,
-.forecast-grid-row{
-    display:grid;
-    grid-template-columns:1.1fr .9fr .8fr .9fr .8fr .8fr .9fr .8fr 1.3fr 1.2fr;
-    gap:10px;
-    align-items:center;
+.quick-filter-btn {
+    background: var(--input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 16px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.2s;
 }
 
-.forecast-grid-header{
-    background:#27272a;
-    border-radius:14px;
-    padding:16px;
+.quick-filter-btn:hover {
+    background: var(--border);
 }
 
-.forecast-grid-header div{
-    color:#fafafa;
-    font-size:12px;
-    text-transform:uppercase;
-    font-weight:800;
+/* High-Contrast Unified Report Table Architecture */
+.report-table-container {
+    width: 100%;
+    overflow-x: auto;
 }
 
-.forecast-grid-row{
-    background:#1f1f23;
-    border:1px solid var(--border);
-    border-radius:14px;
-    padding:16px;
-    margin-top:12px;
+.report-workspace-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    text-align: left;
 }
 
-.forecast-grid-cell{
-    color:#fafafa;
-    font-size:14px;
-    word-break:break-word;
+.report-workspace-table th {
+    background: var(--input);
+    color: var(--text) !important;
+    padding: 14px 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--border);
 }
 
-.day-pill,
-.total-pill,
-.fit-pill{
-    display:inline-block;
-    border-radius:10px;
-    font-weight:900;
-    padding:8px 12px;
-    text-align:center;
+.report-workspace-table td {
+    padding: 14px 12px;
+    border: 1px solid var(--border);
+    color: #e4e4e7;
+    vertical-align: middle;
 }
 
-.day-pill{
-    background:rgba(220,38,38,.15);
-    color:#ef4444;
-    border-radius:999px;
-    font-size:12px;
+.report-workspace-table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.01);
 }
 
-.total-pill{background:rgba(255,255,255,.08);color:#fff;}
-.fit-pill{background:rgba(34,197,94,.13);color:#22c55e;}
-
-.group-list{color:#d4d4d8;font-size:13px;line-height:1.6;}
-.no-group{color:#71717a;font-style:italic;}
-.notes-text{color:#a1a1aa;font-size:13px;}
-
-.action-btn{
-    display:inline-block;
-    padding:9px 12px;
-    border-radius:10px;
-    color:white;
-    text-decoration:none;
-    font-size:12px;
-    font-weight:900;
-    margin:3px;
+.report-workspace-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
 }
 
-.action-add{background:#dc2626;}
-.action-edit{background:#27272a;border:1px solid #3f3f46;}
-
-.empty-state{text-align:center;padding:60px 20px;color:#a1a1aa;}
-.empty-state h4{color:#fafafa;font-weight:800;}
-
-.report-modal{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.78);
-    z-index:9999;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
+/* Custom Typography and Badges */
+.day-text {
+    font-weight: 700;
+    color: #f87171;
 }
 
-.report-modal.show{display:flex;}
-
-.report-modal-box{
-    width:100%;
-    max-width:470px;
-    background:#18181b;
-    border:1px solid #3f3f46;
-    border-radius:24px;
-    padding:24px;
+.pax-count-bold {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
 }
 
-.report-modal-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:22px;
+.pax-fit-highlight {
+    font-weight: 700;
+    font-size: 15px;
+    color: #4ade80;
 }
 
-.report-modal-header h3{
-    margin:0;
-    color:#fafafa;
-    font-size:22px;
-    font-weight:900;
+.group-list {
+    color: #d4d4d8;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
-.report-modal-close{
-    width:38px;
-    height:38px;
-    border:none;
-    border-radius:50%;
-    background:#27272a;
-    color:#fafafa;
-    font-size:25px;
-    cursor:pointer;
+.no-group {
+    color: #71717a;
+    font-style: italic;
 }
 
-.report-form-group{margin-bottom:16px;}
+.notes-text {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.4;
+    max-width: 180px;
+}
 
-.report-form-group label{
-    color:#a1a1aa;
-    font-size:13px;
-    font-weight:800;
-    margin-bottom:8px;
-    display:block;
+/* Action Control Array Elements */
+.action-btn-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: white;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.action-btn:hover { opacity: 0.9; }
+.action-add { background: var(--red); }
+.action-edit { background: var(--input); border: 1px solid var(--border); }
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+}
+
+.empty-state h4 {
+    color: var(--text);
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+/* Modal Engine Configurations */
+.report-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+}
+
+.report-modal.show { display: flex; }
+
+.report-modal-box {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    box-sizing: border-box;
+}
+
+.report-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.report-modal-header h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.report-modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: var(--input);
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.report-form-group {
+    margin-bottom: 18px;
+}
+
+.report-form-group label {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: block;
 }
 
 .report-form-group input,
-.report-form-group textarea{
-    width:100%;
-    background:#27272a;
-    border:1px solid #3f3f46;
-    color:#fafafa;
-    border-radius:14px;
-    padding:14px 15px;
+.report-form-group textarea {
+    width: 100%;
+    background: var(--input);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    font-size: 14px;
 }
 
-.report-form-group input{height:50px;}
+.report-form-group input { height: 46px; }
 
-.report-modal-actions{
-    display:flex;
-    justify-content:flex-end;
-    gap:12px;
-    margin-top:22px;
+.report-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
 }
 
 .modal-cancel-btn,
-.modal-generate-btn{
-    padding:12px 16px;
-    border-radius:12px;
-    font-weight:900;
-    cursor:pointer;
+.modal-generate-btn {
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
 }
 
-.modal-cancel-btn{
-    background:#27272a;
-    color:#fafafa;
-    border:1px solid #3f3f46;
+.modal-cancel-btn {
+    background: var(--input);
+    color: var(--text);
+    border: 1px solid var(--border);
 }
 
-.modal-generate-btn{
-    background:linear-gradient(135deg,#dc2626,#991b1b);
-    color:white;
-    border:none;
+.modal-generate-btn {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: white;
+    border: none;
 }
 
-@media(max-width:1200px){
-    .forecast-grid-header{display:none;}
-    .forecast-grid-row{grid-template-columns:repeat(3,1fr);}
+/* Responsiveness Strategies */
+@media(max-width: 992px) {
+    .report-workspace-table th:nth-child(9),
+    .report-workspace-table td:nth-child(9) { display: none; } /* Dynamic clipping of notes column on small tables */
 }
 
-@media(max-width:768px){
-    .forecast-wrapper{padding:15px;}
-    .forecast-header{flex-direction:column;align-items:flex-start;}
-    .header-actions{width:100%;}
-    .btn-dark-red,.btn-soft,.btn-main{width:100%;text-align:center;}
-    .forecast-grid-row{grid-template-columns:repeat(2,1fr);}
-    .report-modal-actions{flex-direction:column;}
-    .modal-cancel-btn,.modal-generate-btn{width:100%;}
+@media(max-width: 768px) {
+    .forecast-wrapper { padding: 15px; }
+    .forecast-header { flex-direction: column; align-items: flex-start; padding: 20px; }
+    .header-actions { width: 100%; }
+    .btn-dark-red, .btn-soft { width: 100%; }
+    .report-modal-actions { flex-direction: column; }
+    .modal-cancel-btn, .modal-generate-btn { width: 100%; }
 }
 </style>
 
@@ -322,8 +418,8 @@
 
                     <div class="col-md-4">
                         <div class="header-actions">
-                            <button type="submit" class="btn-soft btn-main">Filter</button>
-                            <a href="{{ route('reception.meal-forecasts.index') }}" class="btn-soft">Reset</a>
+                            <button type="submit" class="btn-soft btn-main">Filter Workspace</button>
+                            <a href="{{ route('reception.meal-forecasts.index') }}" class="btn-soft">Reset Parameters</a>
                         </div>
                     </div>
                 </div>
@@ -343,119 +439,122 @@
 
         <div class="forecast-card">
             @if($forecasts->isNotEmpty())
-                <div class="forecast-grid-header">
-                    <div>Date</div>
-                    <div>Day</div>
-                    <div>B/F Total</div>
-                    <div>B/F Group</div>
-                    <div>B/F FIT</div>
-                    <div>Dinner</div>
-                    <div>Dinner Group</div>
-                    <div>Dinner FIT</div>
-                    <div>Notes</div>
-                    <div>Actions</div>
+                <div class="report-table-container">
+                    <table class="report-workspace-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 10%;">Date</th>
+                                <th style="width: 10%;">Day</th>
+                                <th style="width: 9%;">B/F Total</th>
+                                <th style="width: 20%;">B/F Group Allocation</th>
+                                <th style="width: 9%;">B/F FIT</th>
+                                <th style="width: 9%;">Dinner</th>
+                                <th style="width: 20%;">Dinner Group Allocation</th>
+                                <th style="width: 9%;">Dinner FIT</th>
+                                <th style="width: 14%;">Notes</th>
+                                <th style="width: 10%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($forecasts as $forecast)
+                                @php
+                                    $forecastDate = $forecast->forecast_date;
+
+                                    $bfGroupTotal = 0;
+                                    $dnGroupTotal = 0;
+                                    $bfGroupList = [];
+                                    $dnGroupList = [];
+
+                                    foreach ($forecast->groups as $groupStay) {
+                                        $checkIn = $groupStay->check_in_date;
+                                        $checkOut = $groupStay->check_out_date;
+                                        $pax = $groupStay->pax;
+                                        $package = $groupStay->package_type;
+                                        $name = optional($groupStay->forecastGroup)->name ?? 'Unknown Group';
+
+                                        $hasBreakfast = false;
+                                        $hasDinner = false;
+
+                                        if (($package === 'bb' || $package === 'dbb')
+                                            && $forecastDate->gt($checkIn)
+                                            && $forecastDate->lte($checkOut)) {
+                                            $hasBreakfast = true;
+                                        }
+
+                                        if (($package === 'dinner_only' || $package === 'dbb')
+                                            && $forecastDate->gte($checkIn)
+                                            && $forecastDate->lt($checkOut)) {
+                                            $hasDinner = true;
+                                        }
+
+                                        if ($hasBreakfast) {
+                                            $bfGroupTotal += $pax;
+                                            $bfGroupList[] = $name . ' (' . $pax . ')';
+                                        }
+
+                                        if ($hasDinner) {
+                                            $dnGroupTotal += $pax;
+                                            $dnGroupList[] = $name . ' (' . $pax . ')';
+                                        }
+                                    }
+
+                                    $bfFit = $forecast->total_breakfast - $bfGroupTotal;
+                                    $dnFit = $forecast->total_dinner - $dnGroupTotal;
+
+                                    $bfGroups = implode(', ', $bfGroupList);
+                                    $dnGroups = implode(', ', $dnGroupList);
+                                @endphp
+
+                                <tr>
+                                    <td><strong>{{ $forecast->forecast_date->format('d/m/Y') }}</strong></td>
+                                    <td><span class="day-text">{{ $forecast->forecast_date->format('l') }}</span></td>
+                                    <td><span class="pax-count-bold">{{ $forecast->total_breakfast }}</span></td>
+                                    <td>
+                                        @if($bfGroups)
+                                            <div class="group-list">{{ $bfGroups }}</div>
+                                        @else
+                                            <span class="no-group">No Group</span>
+                                        @endif
+                                    </td>
+                                    <td><span class="pax-fit-highlight">{{ $bfFit }}</span></td>
+                                    <td><span class="pax-count-bold">{{ $forecast->total_dinner }}</span></td>
+                                    <td>
+                                        @if($dnGroups)
+                                            <div class="group-list">{{ $dnGroups }}</div>
+                                        @else
+                                            <span class="no-group">No Group</span>
+                                        @endif
+                                    </td>
+                                    <td><span class="pax-fit-highlight">{{ $dnFit }}</span></td>
+                                    <td><div class="notes-text">{{ $forecast->notes ?: '-' }}</div></td>
+                                    <td>
+                                        <div class="action-btn-group">
+                                            <a href="{{ route('reception.meal-forecasts.groups.create', $forecast->id) }}" class="action-btn action-add">
+                                                + Group
+                                            </a>
+                                            <button type="button"
+                                                    class="action-btn action-edit"
+                                                    onclick="openDailyForecastModal(
+                                                        '{{ $forecast->forecast_date->format('Y-m-d') }}',
+                                                        '{{ $forecast->total_breakfast }}',
+                                                        '{{ $forecast->total_dinner }}',
+                                                        @js($forecast->notes)
+                                                    )">
+                                                Edit
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-            @endif
-
-            @forelse($forecasts as $forecast)
-                @php
-                    $forecastDate = $forecast->forecast_date;
-
-                    $bfGroupTotal = 0;
-                    $dnGroupTotal = 0;
-                    $bfGroupList = [];
-                    $dnGroupList = [];
-
-                    foreach ($forecast->groups as $groupStay) {
-                        $checkIn = $groupStay->check_in_date;
-                        $checkOut = $groupStay->check_out_date;
-                        $pax = $groupStay->pax;
-                        $package = $groupStay->package_type;
-                        $name = optional($groupStay->forecastGroup)->name ?? 'Unknown Group';
-
-                        $hasBreakfast = false;
-                        $hasDinner = false;
-
-                        if (($package === 'bb' || $package === 'dbb')
-                            && $forecastDate->gt($checkIn)
-                            && $forecastDate->lte($checkOut)) {
-                            $hasBreakfast = true;
-                        }
-
-                        if (($package === 'dinner_only' || $package === 'dbb')
-                            && $forecastDate->gte($checkIn)
-                            && $forecastDate->lt($checkOut)) {
-                            $hasDinner = true;
-                        }
-
-                        if ($hasBreakfast) {
-                            $bfGroupTotal += $pax;
-                            $bfGroupList[] = $name . ' (' . $pax . ')';
-                        }
-
-                        if ($hasDinner) {
-                            $dnGroupTotal += $pax;
-                            $dnGroupList[] = $name . ' (' . $pax . ')';
-                        }
-                    }
-
-                    $bfFit = $forecast->total_breakfast - $bfGroupTotal;
-                    $dnFit = $forecast->total_dinner - $dnGroupTotal;
-
-                    $bfGroups = implode(', ', $bfGroupList);
-                    $dnGroups = implode(', ', $dnGroupList);
-                @endphp
-
-                <div class="forecast-grid-row">
-                    <div class="forecast-grid-cell">{{ $forecast->forecast_date->format('d/m/Y') }}</div>
-                    <div class="forecast-grid-cell"><span class="day-pill">{{ $forecast->forecast_date->format('l') }}</span></div>
-                    <div class="forecast-grid-cell"><span class="total-pill">{{ $forecast->total_breakfast }}</span></div>
-
-                    <div class="forecast-grid-cell">
-                        @if($bfGroups)
-                            <div class="group-list">{{ $bfGroups }}</div>
-                        @else
-                            <span class="no-group">No Group</span>
-                        @endif
-                    </div>
-
-                    <div class="forecast-grid-cell"><span class="fit-pill">{{ $bfFit }}</span></div>
-                    <div class="forecast-grid-cell"><span class="total-pill">{{ $forecast->total_dinner }}</span></div>
-
-                    <div class="forecast-grid-cell">
-                        @if($dnGroups)
-                            <div class="group-list">{{ $dnGroups }}</div>
-                        @else
-                            <span class="no-group">No Group</span>
-                        @endif
-                    </div>
-
-                    <div class="forecast-grid-cell"><span class="fit-pill">{{ $dnFit }}</span></div>
-                    <div class="forecast-grid-cell"><div class="notes-text">{{ $forecast->notes ?: '-' }}</div></div>
-
-                    <div class="forecast-grid-cell">
-                        <a href="{{ route('reception.meal-forecasts.groups.create', $forecast->id) }}" class="action-btn action-add">
-                            Add Group
-                        </a>
-
-                        <button type="button"
-                                class="action-btn action-edit"
-                                onclick="openDailyForecastModal(
-                                    '{{ $forecast->forecast_date->format('Y-m-d') }}',
-                                    '{{ $forecast->total_breakfast }}',
-                                    '{{ $forecast->total_dinner }}',
-                                    @js($forecast->notes)
-                                )">
-                            Edit
-                        </button>
-                    </div>
-                </div>
-            @empty
+            @else
                 <div class="empty-state">
                     <h4>No forecast added yet</h4>
-                    <p>Create the first daily dinner and breakfast forecast.</p>
+                    <p>Create the first daily dinner and breakfast forecast parameters above.</p>
                 </div>
-            @endforelse
+            @endif
         </div>
     </div>
 
