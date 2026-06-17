@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class HousekeepingStaffApiController extends Controller
 {
- public function myRooms(Request $request)
+public function myRooms(Request $request)
 {
     $user = $request->user();
 
@@ -23,14 +23,6 @@ class HousekeepingStaffApiController extends Controller
         ])
         ->where('assigned_to', $user->id)
         ->whereDate('allocation_date', today())
-        ->whereIn('cleaning_status', [
-            'assigned',
-            'in_progress',
-            'rejected',
-            'dnd',
-            'refused_service',
-            'maintenance_required',
-        ])
         ->get()
         ->sortBy(function ($allocation) {
             return (int) ($allocation->room->room_number ?? 0);
@@ -40,27 +32,41 @@ class HousekeepingStaffApiController extends Controller
             $roomNumber = $allocation->room->room_number ?? '-';
             $cleaningStatus = $allocation->cleaning_status ?? 'assigned';
 
+            $flutterCleaningStatus = in_array($cleaningStatus, [
+                'cleaned',
+                'inspection_pending',
+                'inspected',
+            ]) ? 'cleaned' : $cleaningStatus;
+
             return [
                 'id' => $allocation->id,
                 'room_id' => $allocation->room_id,
                 'room_number' => $roomNumber,
                 'floor' => is_numeric($roomNumber) ? substr($roomNumber, 0, 1) : '-',
                 'room_status' => $allocation->roomStatusUpdate->status ?? '',
-                'cleaning_status' => $cleaningStatus,
+
+                'cleaning_status' => $flutterCleaningStatus,
+                'actual_cleaning_status' => $cleaningStatus,
+
                 'display_status' => match ($cleaningStatus) {
                     'assigned' => 'Assigned',
                     'in_progress' => 'In Progress',
+                    'cleaned' => 'Cleaned',
+                    'inspection_pending' => 'Waiting Inspection',
+                    'inspected' => 'Inspected',
                     'rejected' => 'Rejected - Redo Required',
                     'dnd' => 'Do Not Disturb',
                     'refused_service' => 'Refused Service',
                     'maintenance_required' => 'Maintenance Required',
                     default => ucfirst(str_replace('_', ' ', $cleaningStatus)),
                 },
+
                 'estimated_minutes' => $allocation->estimated_minutes,
                 'notes' => $allocation->notes,
                 'started_at' => $allocation->started_at,
                 'cleaned_at' => $allocation->cleaned_at,
                 'inspected_at' => $allocation->inspected_at,
+
                 'can_start' => in_array($cleaningStatus, ['assigned', 'rejected']),
                 'can_complete' => $cleaningStatus === 'in_progress',
                 'can_resubmit' => $cleaningStatus === 'rejected',
