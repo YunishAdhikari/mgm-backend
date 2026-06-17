@@ -23,8 +23,13 @@ class HousekeepingStaffApiController extends Controller
         ])
         ->where('assigned_to', $user->id)
         ->whereDate('allocation_date', today())
-        ->whereNotIn('cleaning_status', [
-            'inspected',
+        ->whereIn('cleaning_status', [
+            'assigned',
+            'in_progress',
+            'rejected',
+            'dnd',
+            'refused_service',
+            'maintenance_required',
         ])
         ->get()
         ->sortBy(function ($allocation) {
@@ -40,35 +45,24 @@ class HousekeepingStaffApiController extends Controller
                 'room_id' => $allocation->room_id,
                 'room_number' => $roomNumber,
                 'floor' => is_numeric($roomNumber) ? substr($roomNumber, 0, 1) : '-',
-
                 'room_status' => $allocation->roomStatusUpdate->status ?? '',
                 'cleaning_status' => $cleaningStatus,
                 'display_status' => match ($cleaningStatus) {
                     'assigned' => 'Assigned',
                     'in_progress' => 'In Progress',
-                    'cleaned' => 'Cleaned',
-                    'inspection_pending' => 'Waiting Inspection',
-                    'inspected' => 'Inspected',
-                    'rejected' => 'Rejected',
+                    'rejected' => 'Rejected - Redo Required',
                     'dnd' => 'Do Not Disturb',
                     'refused_service' => 'Refused Service',
                     'maintenance_required' => 'Maintenance Required',
                     default => ucfirst(str_replace('_', ' ', $cleaningStatus)),
                 },
-
                 'estimated_minutes' => $allocation->estimated_minutes,
                 'notes' => $allocation->notes,
                 'started_at' => $allocation->started_at,
                 'cleaned_at' => $allocation->cleaned_at,
                 'inspected_at' => $allocation->inspected_at,
-
-                'can_start' => in_array($cleaningStatus, [
-                    'assigned',
-                    'rejected',
-                ]),
-
+                'can_start' => in_array($cleaningStatus, ['assigned', 'rejected']),
                 'can_complete' => $cleaningStatus === 'in_progress',
-
                 'can_resubmit' => $cleaningStatus === 'rejected',
             ];
         });
