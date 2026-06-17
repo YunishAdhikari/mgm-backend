@@ -13,77 +13,73 @@ use Illuminate\Support\Facades\Log;
 
 class HousekeepingStaffApiController extends Controller
 {
-public function myRooms(Request $request)
-{
-    $user = $request->user();
+    public function myRooms(Request $request)
+    {
+        $user = $request->user();
 
-    $rooms = HousekeepingRoomAllocation::with([
-            'room',
-            'roomStatusUpdate',
-        ])
-        ->where('assigned_to', $user->id)
-        ->whereDate('allocation_date', today())
-        ->get()
-        ->sortBy(function ($allocation) {
-            return (int) ($allocation->room->room_number ?? 0);
-        })
-        ->values()
-        ->map(function ($allocation) {
-            $roomNumber = $allocation->room->room_number ?? '-';
-            $cleaningStatus = $allocation->cleaning_status ?? 'assigned';
+        $rooms = HousekeepingRoomAllocation::with([
+                'room',
+                'roomStatusUpdate',
+            ])
+            ->where('assigned_to', $user->id)
+            ->whereDate('allocation_date', today())
+            ->get()
+            ->sortBy(fn ($allocation) => (int) ($allocation->room->room_number ?? 0))
+            ->values()
+            ->map(function ($allocation) {
+                $roomNumber = $allocation->room->room_number ?? '-';
+                $cleaningStatus = $allocation->cleaning_status ?? 'assigned';
 
-            $flutterCleaningStatus = in_array($cleaningStatus, [
-                'cleaned',
-                'inspection_pending',
-                'inspected',
-            ]) ? 'cleaned' : $cleaningStatus;
+                return [
+                    'id' => $allocation->id,
+                    'room_id' => $allocation->room_id,
+                    'room_number' => $roomNumber,
+                    'floor' => is_numeric($roomNumber) ? substr($roomNumber, 0, 1) : '-',
+                    'room_status' => $allocation->roomStatusUpdate->status ?? '',
+                    'cleaning_status' => $cleaningStatus,
+                    'count_as_cleaned' => in_array($cleaningStatus, [
+                        'inspection_pending',
+                        'inspected',
+                    ]),
+                    'display_status' => match ($cleaningStatus) {
+                        'assigned' => 'Assigned',
+                        'in_progress' => 'In Progress',
+                        'inspection_pending' => 'Waiting Inspection',
+                        'inspected' => 'Inspected',
+                        'rejected' => 'Rejected - Redo Required',
+                        'dnd' => 'Do Not Disturb',
+                        'refused_service' => 'Refused Service',
+                        'maintenance_required' => 'Maintenance Required',
+                        default => ucfirst(str_replace('_', ' ', $cleaningStatus)),
+                    },
+                    'estimated_minutes' => $allocation->estimated_minutes,
+                    'notes' => $allocation->notes,
+                    'started_at' => $allocation->started_at,
+                    'cleaned_at' => $allocation->cleaned_at,
+                    'inspected_at' => $allocation->inspected_at,
+                    'can_start' => in_array($cleaningStatus, ['assigned', 'rejected']),
+                    'can_complete' => $cleaningStatus === 'in_progress',
+                    'can_resubmit' => $cleaningStatus === 'rejected',
+                ];
+            });
 
-            return [
-                'id' => $allocation->id,
-                'room_id' => $allocation->room_id,
-                'room_number' => $roomNumber,
-                'floor' => is_numeric($roomNumber) ? substr($roomNumber, 0, 1) : '-',
-                'room_status' => $allocation->roomStatusUpdate->status ?? '',
-
-                'cleaning_status' => $flutterCleaningStatus,
-                'actual_cleaning_status' => $cleaningStatus,
-
-                'display_status' => match ($cleaningStatus) {
-                    'assigned' => 'Assigned',
-                    'in_progress' => 'In Progress',
-                    'cleaned' => 'Cleaned',
-                    'inspection_pending' => 'Waiting Inspection',
-                    'inspected' => 'Inspected',
-                    'rejected' => 'Rejected - Redo Required',
-                    'dnd' => 'Do Not Disturb',
-                    'refused_service' => 'Refused Service',
-                    'maintenance_required' => 'Maintenance Required',
-                    default => ucfirst(str_replace('_', ' ', $cleaningStatus)),
-                },
-
-                'estimated_minutes' => $allocation->estimated_minutes,
-                'notes' => $allocation->notes,
-                'started_at' => $allocation->started_at,
-                'cleaned_at' => $allocation->cleaned_at,
-                'inspected_at' => $allocation->inspected_at,
-
-                'can_start' => in_array($cleaningStatus, ['assigned', 'rejected']),
-                'can_complete' => $cleaningStatus === 'in_progress',
-                'can_resubmit' => $cleaningStatus === 'rejected',
-            ];
-        });
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Today allocated rooms fetched successfully.',
-        'data' => $rooms,
-    ]);
-}
-
+        return response()->json([
+            'success' => true,
+            'message' => 'Today allocated rooms fetched successfully.',
+            'data' => $rooms,
+        ]);
+    }
 
     public function startCleaning(Request $request, HousekeepingRoomAllocation $allocation)
     {
         $this->checkOwnership($request, $allocation);
+
+        if (!in_array($allocation->cleaning_status, ['assigned', 'rejected'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This room cannot be started now.',
+            ], 422);
+        }
 
         $allocation->update([
             'cleaning_status' => 'in_progress',
@@ -100,10 +96,17 @@ public function myRooms(Request $request)
     {
         $this->checkOwnership($request, $allocation);
 
+        if (!in_array($allocation->cleaning_status, ['assigned', 'in_progress', 'rejected'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This room cannot be marked as cleaned.',
+            ], 422);
+        }
+
         $allocation->load(['room', 'assignedTo']);
 
         $allocation->update([
-            'cleaning_status' => 'cleaned',
+            'cleaning_status' => 'inspection_pending',
             'cleaned_at' => now(),
         ]);
 
@@ -123,7 +126,7 @@ public function myRooms(Request $request)
 
         return response()->json([
             'success' => true,
-            'message' => 'Room marked as cleaned.',
+            'message' => 'Room marked as cleaned and sent for inspection.',
         ]);
     }
 
@@ -185,17 +188,6 @@ public function myRooms(Request $request)
             'success' => true,
             'message' => 'Room marked as refused service.',
         ]);
-    }
-
-    private function checkOwnership(Request $request, HousekeepingRoomAllocation $allocation)
-    {
-        if ((int) $allocation->assigned_to !== (int) $request->user()->id) {
-            abort(403, 'You are not allowed to update this room.');
-        }
-
-        if ($allocation->allocation_date !== today()->toDateString()) {
-            abort(403, 'You can only update today allocated rooms.');
-        }
     }
 
     public function markMaintenance(Request $request, HousekeepingRoomAllocation $allocation)
@@ -269,75 +261,69 @@ public function myRooms(Request $request)
     }
 
     public function supervisorProgress(Request $request)
-{
-    $allocations = HousekeepingRoomAllocation::with([
-            'room',
-            'assignedTo',
-            'roomStatusUpdate',
-        ])
-        ->whereDate('allocation_date', today())
-        ->get();
+    {
+        $allocations = HousekeepingRoomAllocation::with([
+                'room',
+                'assignedTo',
+                'roomStatusUpdate',
+            ])
+            ->whereDate('allocation_date', today())
+            ->get();
 
-    $cleanedStatuses = [
-        'cleaned',
-        'inspection_pending',
-        'inspected',
-    ];
+        $doneStatuses = ['inspection_pending', 'inspected'];
 
-    $pendingStatuses = [
-        'assigned',
-    ];
+        $summary = [
+            'total' => $allocations->count(),
+            'pending' => $allocations->where('cleaning_status', 'assigned')->count(),
+            'in_progress' => $allocations->where('cleaning_status', 'in_progress')->count(),
+            'cleaned' => $allocations->whereIn('cleaning_status', $doneStatuses)->count(),
+            'inspection_pending' => $allocations->where('cleaning_status', 'inspection_pending')->count(),
+            'inspected' => $allocations->where('cleaning_status', 'inspected')->count(),
+            'dnd' => $allocations->where('cleaning_status', 'dnd')->count(),
+            'refused' => $allocations->where('cleaning_status', 'refused_service')->count(),
+            'rejected' => $allocations->where('cleaning_status', 'rejected')->count(),
+            'maintenance_required' => $allocations->where('cleaning_status', 'maintenance_required')->count(),
+        ];
 
-    $summary = [
-        'total' => $allocations->count(),
-        'pending' => $allocations->whereIn('cleaning_status', $pendingStatuses)->count(),
-        'in_progress' => $allocations->where('cleaning_status', 'in_progress')->count(),
-        'cleaned' => $allocations->whereIn('cleaning_status', $cleanedStatuses)->count(),
-        'dnd' => $allocations->where('cleaning_status', 'dnd')->count(),
-        'refused' => $allocations->where('cleaning_status', 'refused_service')->count(),
-        'rejected' => $allocations->where('cleaning_status', 'rejected')->count(),
-        'maintenance_required' => $allocations->where('cleaning_status', 'maintenance_required')->count(),
-    ];
+        $staff = $allocations
+            ->groupBy('assigned_to')
+            ->map(function ($items) use ($doneStatuses) {
+                $first = $items->first();
 
-    $staff = $allocations
-        ->groupBy('assigned_to')
-        ->map(function ($items) use ($cleanedStatuses, $pendingStatuses) {
-            $first = $items->first();
+                return [
+                    'staff_id' => $first->assigned_to,
+                    'staff_name' => $first->assignedTo->name ?? 'Unknown Staff',
+                    'total' => $items->count(),
+                    'pending' => $items->where('cleaning_status', 'assigned')->count(),
+                    'in_progress' => $items->where('cleaning_status', 'in_progress')->count(),
+                    'cleaned' => $items->whereIn('cleaning_status', $doneStatuses)->count(),
+                    'inspection_pending' => $items->where('cleaning_status', 'inspection_pending')->count(),
+                    'inspected' => $items->where('cleaning_status', 'inspected')->count(),
+                    'dnd' => $items->where('cleaning_status', 'dnd')->count(),
+                    'refused' => $items->where('cleaning_status', 'refused_service')->count(),
+                    'rejected' => $items->where('cleaning_status', 'rejected')->count(),
+                    'maintenance_required' => $items->where('cleaning_status', 'maintenance_required')->count(),
+                    'rooms' => $items->map(function ($allocation) {
+                        return [
+                            'id' => $allocation->id,
+                            'room_number' => $allocation->room->room_number ?? '-',
+                            'room_status' => $allocation->roomStatusUpdate->status ?? '',
+                            'cleaning_status' => $allocation->cleaning_status ?? 'assigned',
+                        ];
+                    })->values(),
+                ];
+            })
+            ->values();
 
-            return [
-                'staff_id' => $first->assigned_to,
-                'staff_name' => $first->assignedTo->name ?? 'Unknown Staff',
-                'total' => $items->count(),
-                'pending' => $items->whereIn('cleaning_status', $pendingStatuses)->count(),
-                'in_progress' => $items->where('cleaning_status', 'in_progress')->count(),
-                'cleaned' => $items->whereIn('cleaning_status', $cleanedStatuses)->count(),
-                'dnd' => $items->where('cleaning_status', 'dnd')->count(),
-                'refused' => $items->where('cleaning_status', 'refused_service')->count(),
-                'rejected' => $items->where('cleaning_status', 'rejected')->count(),
-                'maintenance_required' => $items->where('cleaning_status', 'maintenance_required')->count(),
-
-                'rooms' => $items->map(function ($allocation) {
-                    return [
-                        'id' => $allocation->id,
-                        'room_number' => $allocation->room->room_number ?? '-',
-                        'room_status' => $allocation->roomStatusUpdate->status ?? '',
-                        'cleaning_status' => $allocation->cleaning_status ?? 'assigned',
-                    ];
-                })->values(),
-            ];
-        })
-        ->values();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'HK supervisor progress fetched successfully.',
-        'data' => [
-            'summary' => $summary,
-            'staff' => $staff,
-        ],
-    ]);
-}
-
+        return response()->json([
+            'success' => true,
+            'message' => 'HK supervisor progress fetched successfully.',
+            'data' => [
+                'summary' => $summary,
+                'staff' => $staff,
+            ],
+        ]);
+    }
 
     public function inspectionQueue(Request $request)
     {
@@ -347,7 +333,7 @@ public function myRooms(Request $request)
                 'roomStatusUpdate',
             ])
             ->whereDate('allocation_date', today())
-            ->where('cleaning_status', 'cleaned')
+            ->where('cleaning_status', 'inspection_pending')
             ->orderBy('cleaned_at', 'asc')
             ->get()
             ->map(function ($allocation) {
@@ -371,6 +357,13 @@ public function myRooms(Request $request)
 
     public function approveInspection(Request $request, HousekeepingRoomAllocation $allocation)
     {
+        if ($allocation->cleaning_status !== 'inspection_pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only rooms waiting for inspection can be approved.',
+            ], 422);
+        }
+
         $allocation->load(['room', 'assignedTo']);
 
         $allocation->update([
@@ -404,10 +397,17 @@ public function myRooms(Request $request)
             'reason' => 'required|string|max:1000',
         ]);
 
+        if ($allocation->cleaning_status !== 'inspection_pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only rooms waiting for inspection can be rejected.',
+            ], 422);
+        }
+
         $allocation->load(['room', 'assignedTo']);
 
         $allocation->update([
-            'cleaning_status' => 'assigned',
+            'cleaning_status' => 'rejected',
             'notes' => $request->reason,
             'cleaned_at' => null,
             'inspected_at' => null,
@@ -431,6 +431,17 @@ public function myRooms(Request $request)
             'success' => true,
             'message' => 'Room rejected and sent back to staff.',
         ]);
+    }
+
+    private function checkOwnership(Request $request, HousekeepingRoomAllocation $allocation)
+    {
+        if ((int) $allocation->assigned_to !== (int) $request->user()->id) {
+            abort(403, 'You are not allowed to update this room.');
+        }
+
+        if ($allocation->allocation_date !== today()->toDateString()) {
+            abort(403, 'You can only update today allocated rooms.');
+        }
     }
 
     private function sendPushToUser(?User $user, string $title, string $body, array $data = []): bool
