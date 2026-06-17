@@ -309,6 +309,8 @@ class HousekeepingStaffApiController extends Controller
         ],
     ]);
 }
+
+
     public function inspectionQueue(Request $request)
     {
         $rooms = HousekeepingRoomAllocation::with([
