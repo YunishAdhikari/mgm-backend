@@ -241,60 +241,74 @@ class HousekeepingStaffApiController extends Controller
     }
 
     public function supervisorProgress(Request $request)
-    {
-        $allocations = HousekeepingRoomAllocation::with([
-                'room',
-                'assignedTo',
-                'roomStatusUpdate',
-            ])
-            ->whereDate('allocation_date', today())
-            ->get();
+{
+    $allocations = HousekeepingRoomAllocation::with([
+            'room',
+            'assignedTo',
+            'roomStatusUpdate',
+        ])
+        ->whereDate('allocation_date', today())
+        ->get();
 
-        $summary = [
-            'total' => $allocations->count(),
-            'pending' => $allocations->whereIn('cleaning_status', ['assigned', 'pending'])->count(),
-            'in_progress' => $allocations->where('cleaning_status', 'in_progress')->count(),
-            'cleaned' => $allocations->where('cleaning_status', 'cleaned')->count(),
-            'dnd' => $allocations->where('cleaning_status', 'dnd')->count(),
-            'refused' => $allocations->where('cleaning_status', 'refused_service')->count(),
-        ];
+    $cleanedStatuses = [
+        'cleaned',
+        'inspection_pending',
+        'inspected',
+    ];
 
-        $staff = $allocations
-            ->groupBy('assigned_to')
-            ->map(function ($items) {
-                $first = $items->first();
+    $pendingStatuses = [
+        'assigned',
+    ];
 
-                return [
-                    'staff_id' => $first->assigned_to,
-                    'staff_name' => $first->assignedTo->name ?? 'Unknown Staff',
-                    'total' => $items->count(),
-                    'pending' => $items->whereIn('cleaning_status', ['assigned', 'pending'])->count(),
-                    'in_progress' => $items->where('cleaning_status', 'in_progress')->count(),
-                    'cleaned' => $items->where('cleaning_status', 'cleaned')->count(),
-                    'dnd' => $items->where('cleaning_status', 'dnd')->count(),
-                    'refused' => $items->where('cleaning_status', 'refused_service')->count(),
-                    'rooms' => $items->map(function ($allocation) {
-                        return [
-                            'id' => $allocation->id,
-                            'room_number' => $allocation->room->room_number ?? '-',
-                            'room_status' => $allocation->roomStatusUpdate->status ?? '',
-                            'cleaning_status' => $allocation->cleaning_status ?? 'assigned',
-                        ];
-                    })->values(),
-                ];
-            })
-            ->values();
+    $summary = [
+        'total' => $allocations->count(),
+        'pending' => $allocations->whereIn('cleaning_status', $pendingStatuses)->count(),
+        'in_progress' => $allocations->where('cleaning_status', 'in_progress')->count(),
+        'cleaned' => $allocations->whereIn('cleaning_status', $cleanedStatuses)->count(),
+        'dnd' => $allocations->where('cleaning_status', 'dnd')->count(),
+        'refused' => $allocations->where('cleaning_status', 'refused_service')->count(),
+        'rejected' => $allocations->where('cleaning_status', 'rejected')->count(),
+        'maintenance_required' => $allocations->where('cleaning_status', 'maintenance_required')->count(),
+    ];
 
-        return response()->json([
-            'success' => true,
-            'message' => 'HK supervisor progress fetched successfully.',
-            'data' => [
-                'summary' => $summary,
-                'staff' => $staff,
-            ],
-        ]);
-    }
+    $staff = $allocations
+        ->groupBy('assigned_to')
+        ->map(function ($items) use ($cleanedStatuses, $pendingStatuses) {
+            $first = $items->first();
 
+            return [
+                'staff_id' => $first->assigned_to,
+                'staff_name' => $first->assignedTo->name ?? 'Unknown Staff',
+                'total' => $items->count(),
+                'pending' => $items->whereIn('cleaning_status', $pendingStatuses)->count(),
+                'in_progress' => $items->where('cleaning_status', 'in_progress')->count(),
+                'cleaned' => $items->whereIn('cleaning_status', $cleanedStatuses)->count(),
+                'dnd' => $items->where('cleaning_status', 'dnd')->count(),
+                'refused' => $items->where('cleaning_status', 'refused_service')->count(),
+                'rejected' => $items->where('cleaning_status', 'rejected')->count(),
+                'maintenance_required' => $items->where('cleaning_status', 'maintenance_required')->count(),
+
+                'rooms' => $items->map(function ($allocation) {
+                    return [
+                        'id' => $allocation->id,
+                        'room_number' => $allocation->room->room_number ?? '-',
+                        'room_status' => $allocation->roomStatusUpdate->status ?? '',
+                        'cleaning_status' => $allocation->cleaning_status ?? 'assigned',
+                    ];
+                })->values(),
+            ];
+        })
+        ->values();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'HK supervisor progress fetched successfully.',
+        'data' => [
+            'summary' => $summary,
+            'staff' => $staff,
+        ],
+    ]);
+}
     public function inspectionQueue(Request $request)
     {
         $rooms = HousekeepingRoomAllocation::with([
