@@ -13,45 +13,73 @@ use Illuminate\Support\Facades\Log;
 
 class HousekeepingStaffApiController extends Controller
 {
-    public function myRooms(Request $request)
-    {
-        $user = $request->user();
+ public function myRooms(Request $request)
+{
+    $user = $request->user();
 
-        $rooms = HousekeepingRoomAllocation::with([
-                'room',
-                'roomStatusUpdate',
-            ])
-            ->where('assigned_to', $user->id)
-            ->whereDate('allocation_date', today())
-            ->get()
-            ->sortBy(function ($allocation) {
-                return (int) ($allocation->room->room_number ?? 0);
-            })
-            ->values()
-            ->map(function ($allocation) {
-                $roomNumber = $allocation->room->room_number ?? '-';
+    $rooms = HousekeepingRoomAllocation::with([
+            'room',
+            'roomStatusUpdate',
+        ])
+        ->where('assigned_to', $user->id)
+        ->whereDate('allocation_date', today())
+        ->whereNotIn('cleaning_status', [
+            'inspected',
+        ])
+        ->get()
+        ->sortBy(function ($allocation) {
+            return (int) ($allocation->room->room_number ?? 0);
+        })
+        ->values()
+        ->map(function ($allocation) {
+            $roomNumber = $allocation->room->room_number ?? '-';
+            $cleaningStatus = $allocation->cleaning_status ?? 'assigned';
 
-                return [
-                    'id' => $allocation->id,
-                    'room_id' => $allocation->room_id,
-                    'room_number' => $roomNumber,
-                    'floor' => is_numeric($roomNumber) ? substr($roomNumber, 0, 1) : '-',
-                    'room_status' => $allocation->roomStatusUpdate->status ?? '',
-                    'cleaning_status' => $allocation->cleaning_status ?? 'assigned',
-                    'estimated_minutes' => $allocation->estimated_minutes,
-                    'notes' => $allocation->notes,
-                    'started_at' => $allocation->started_at,
-                    'cleaned_at' => $allocation->cleaned_at,
-                    'inspected_at' => $allocation->inspected_at,
-                ];
-            });
+            return [
+                'id' => $allocation->id,
+                'room_id' => $allocation->room_id,
+                'room_number' => $roomNumber,
+                'floor' => is_numeric($roomNumber) ? substr($roomNumber, 0, 1) : '-',
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Today allocated rooms fetched successfully.',
-            'data' => $rooms,
-        ]);
-    }
+                'room_status' => $allocation->roomStatusUpdate->status ?? '',
+                'cleaning_status' => $cleaningStatus,
+                'display_status' => match ($cleaningStatus) {
+                    'assigned' => 'Assigned',
+                    'in_progress' => 'In Progress',
+                    'cleaned' => 'Cleaned',
+                    'inspection_pending' => 'Waiting Inspection',
+                    'inspected' => 'Inspected',
+                    'rejected' => 'Rejected',
+                    'dnd' => 'Do Not Disturb',
+                    'refused_service' => 'Refused Service',
+                    'maintenance_required' => 'Maintenance Required',
+                    default => ucfirst(str_replace('_', ' ', $cleaningStatus)),
+                },
+
+                'estimated_minutes' => $allocation->estimated_minutes,
+                'notes' => $allocation->notes,
+                'started_at' => $allocation->started_at,
+                'cleaned_at' => $allocation->cleaned_at,
+                'inspected_at' => $allocation->inspected_at,
+
+                'can_start' => in_array($cleaningStatus, [
+                    'assigned',
+                    'rejected',
+                ]),
+
+                'can_complete' => $cleaningStatus === 'in_progress',
+
+                'can_resubmit' => $cleaningStatus === 'rejected',
+            ];
+        });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Today allocated rooms fetched successfully.',
+        'data' => $rooms,
+    ]);
+}
+
 
     public function startCleaning(Request $request, HousekeepingRoomAllocation $allocation)
     {
