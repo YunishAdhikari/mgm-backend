@@ -6,19 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-public function up(): void
-{
-    Schema::create('restaurant_tables', function (Blueprint $table) {
-        $table->id();
+    public function up(): void
+    {
+        Schema::create('restaurant_tables', function (Blueprint $table) {
+            $table->id();
 
-        $table->string('table_name');
+            $table->foreignId('restaurant_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-        $table->integer('capacity');
+            $table->string('table_name');
+            $table->integer('capacity');
 
-        $table->enum('table_shape', [
+            $table->enum('table_shape', [
                 'round',
                 'square',
                 'horizontal',
@@ -26,29 +26,26 @@ public function up(): void
                 'banquet'
             ])->default('square');
 
-        $table->enum('status', [
-            'available',
-            'reserved',
-            'occupied',
-            'out_of_service'
-        ])->default('available');
+            $table->enum('status', [
+                'available',
+                'reserved',
+                'occupied',
+                'out_of_service'
+            ])->default('available');
 
-        // floor plan position
-        $table->integer('position_x')
-            ->default(0);
+            $table->integer('position_x')->default(0);
+            $table->integer('position_y')->default(0);
 
-        $table->integer('position_y')
-            ->default(0);
+            $table->boolean('is_active')->default(true);
 
-        $table->boolean('is_active')
-            ->default(true);
+            $table->timestamps();
 
-        $table->timestamps();
-    });
-}
-    /**
-     * Reverse the migrations.
-     */
+            $table->unique(['restaurant_id', 'table_name']);
+            $table->index(['restaurant_id', 'status']);
+            $table->index(['restaurant_id', 'is_active']);
+        });
+    }
+
     public function down(): void
     {
         Schema::dropIfExists('restaurant_tables');

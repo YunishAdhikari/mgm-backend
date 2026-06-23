@@ -6,94 +6,75 @@ use App\Models\User;
 use App\Models\RotaShift;
 use App\Models\Department;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\RotaExport;
 use Carbon\Carbon;
-
-// use Illuminate\Http\Request;
 
 class RotaController extends Controller
 {
+    public function index()
+    {
+        $user = auth()->user();
+        $role = strtolower($user->role->name ?? '');
+        $hotelId = $user->hotel_id;
 
-public function index()
-{
-    $user = auth()->user();
-    $role = strtolower($user->role->name ?? '');
+        if ($role === 'supervisor') {
+            $employees = User::with(['role', 'department'])
+                ->where('hotel_id', $hotelId)
+                ->where('status', 'active')
+                ->where('department_id', $user->department_id)
+                ->orderBy('name')
+                ->get();
 
-    if ($role === 'supervisor') {
+            $departments = Department::where('hotel_id', $hotelId)
+                ->where('id', $user->department_id)
+                ->get();
+
+            $shifts = RotaShift::with(['user', 'department'])
+                ->whereHas('user', function ($q) use ($hotelId) {
+                    $q->where('hotel_id', $hotelId);
+                })
+                ->where('department_id', $user->department_id)
+                ->orderBy('shift_date', 'desc')
+                ->orderBy('start_time')
+                ->get();
+
+            return view('dashboard.supervisor.rota.index', compact(
+                'employees',
+                'departments',
+                'shifts'
+            ));
+        }
+
         $employees = User::with(['role', 'department'])
+            ->where('hotel_id', $hotelId)
             ->where('status', 'active')
-            ->where('department_id', $user->department_id)
             ->orderBy('name')
             ->get();
 
-        $departments = Department::where('id', $user->department_id)->get();
+        $departments = Department::where('hotel_id', $hotelId)
+            ->orderBy('name')
+            ->get();
 
         $shifts = RotaShift::with(['user', 'department'])
-            ->where('department_id', $user->department_id)
+            ->whereHas('user', function ($q) use ($hotelId) {
+                $q->where('hotel_id', $hotelId);
+            })
             ->orderBy('shift_date', 'desc')
             ->orderBy('start_time')
             ->get();
 
-        return view('dashboard.supervisor.rota.index', compact(
+        return view('dashboard.manager.rota.index', compact(
             'employees',
             'departments',
             'shifts'
         ));
     }
 
-    $employees = User::with(['role', 'department'])
-        ->where('status', 'active')
-        ->orderBy('name')
-        ->get();
-
-    $departments = Department::orderBy('name')->get();
-
-    $shifts = RotaShift::with(['user', 'department'])
-        ->orderBy('shift_date', 'desc')
-        ->orderBy('start_time')
-        ->get();
-
-    return view('dashboard.manager.rota.index', compact(
-        'employees',
-        'departments',
-        'shifts'
-    ));
-}
-    // public function index()
-    // {
-    //     $departments = Department::all();
-    //     $shifts = RotaShift::all();
-    //     $employees = User::with(['role', 'department'])
-    //         ->where('status', 'active')
-    //         ->orderBy('name')
-    //         ->get();
-
-    //         $layout = auth()->user()->role->name === 'supervisor'
-    //             ? 'dashboard.supervisor.rota.index'
-    //             : 'dashboard.manager.rota.index';
-
-    //         return view($layout, compact(
-    //             'employees',
-    //             'departments',
-    //             'shifts'
-    //         ));
-    //     // $departments = Department::orderBy('name')->get();
-
-    //     // $shifts = RotaShift::with(['user', 'department'])
-    //     //     ->orderBy('shift_date', 'desc')
-    //     //     ->orderBy('start_time')
-    //     //     ->get();
-
-    //     // return view('dashboard.manager.rota.index', compact(
-    //     //     'employees',
-    //     //     'departments',
-    //     //     'shifts'
-    //     // ));
-    // }
-
     public function store(Request $request)
     {
+        $authUser = auth()->user();
+        $role = strtolower($authUser->role->name ?? '');
+        $hotelId = $authUser->hotel_id;
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'department_id' => 'nullable|exists:departments,id',
@@ -103,24 +84,30 @@ public function index()
             'end_time' => 'nullable',
             'break_minutes' => 'nullable|integer|min:0',
             'notes' => 'nullable|string',
-
             'split_start_time_1' => 'nullable',
             'split_end_time_1' => 'nullable',
             'split_start_time_2' => 'nullable',
             'split_end_time_2' => 'nullable',
         ]);
 
-        $user = auth()->user();
-            $role = strtolower($user->role->name ?? '');
+        $employee = User::where('hotel_id', $hotelId)
+            ->findOrFail($request->user_id);
 
-            $departmentId = $request->department_id;
+        $departmentId = $role === 'supervisor'
+            ? $authUser->department_id
+            : ($request->department_id ?? $employee->department_id);
 
-            if ($role === 'supervisor') {
-                $departmentId = $user->department_id;
-            }
+        if ($role === 'supervisor' && $employee->department_id != $authUser->department_id) {
+            abort(403);
+        }
+
+        if ($departmentId) {
+            Department::where('hotel_id', $hotelId)
+                ->where('id', $departmentId)
+                ->firstOrFail();
+        }
 
         if ($request->shift_type === 'split') {
-
             $request->validate([
                 'split_start_time_1' => 'required',
                 'split_end_time_1' => 'required',
@@ -129,8 +116,7 @@ public function index()
             ]);
 
             RotaShift::create([
-                'user_id' => $request->user_id,
-                // 'department_id' => $request->department_id,
+                'user_id' => $employee->id,
                 'department_id' => $departmentId,
                 'shift_date' => $request->shift_date,
                 'shift_type' => 'split',
@@ -142,8 +128,8 @@ public function index()
             ]);
 
             RotaShift::create([
-                'user_id' => $request->user_id,
-                'department_id' => $request->department_id,
+                'user_id' => $employee->id,
+                'department_id' => $departmentId,
                 'shift_date' => $request->shift_date,
                 'shift_type' => 'split',
                 'start_time' => $request->split_start_time_2,
@@ -152,12 +138,10 @@ public function index()
                 'status' => 'draft',
                 'notes' => $request->notes,
             ]);
-
         } else {
-
             RotaShift::create([
-                'user_id' => $request->user_id,
-                'department_id' => $request->department_id,
+                'user_id' => $employee->id,
+                'department_id' => $departmentId,
                 'shift_date' => $request->shift_date,
                 'shift_type' => $request->shift_type,
                 'start_time' => $request->start_time,
@@ -173,109 +157,130 @@ public function index()
 
     public function destroy($id)
     {
-        $shift = RotaShift::findOrFail($id);
+        $hotelId = auth()->user()->hotel_id;
+
+        $shift = RotaShift::whereHas('user', function ($q) use ($hotelId) {
+                $q->where('hotel_id', $hotelId);
+            })
+            ->findOrFail($id);
+
         $shift->delete();
 
         return back()->with('success', 'Shift deleted successfully.');
     }
 
     public function publish(Request $request)
-{
-    $request->validate([
-        'from_date' => 'required|date',
-        'to_date' => 'required|date|after_or_equal:from_date',
-    ]);
+    {
+        $hotelId = auth()->user()->hotel_id;
 
-    RotaShift::whereBetween('shift_date', [
-        $request->from_date,
-        $request->to_date
-    ])->update([
-        'status' => 'published'
-    ]);
-    logActivity('Published Rota', 'Rota', ' rota published');
-    return back()->with('success', 'Rota published successfully.');
-}
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date|after_or_equal:from_date',
+        ]);
 
-public function managerView()
-{
-    $weekStart = request('week_start')
-        ? \Carbon\Carbon::parse(request('week_start'))->startOfWeek()
-        : now()->startOfWeek();
-
-    $weekDates = collect(range(0, 6))->map(function ($day) use ($weekStart) {
-        return $weekStart->copy()->addDays($day);
-    });
-
-      $departments = Department::whereRaw('LOWER(name) != ?', ['admin'])
-    ->with(['users' => function ($query) {
-        $query->where('status', 'active')
-            ->whereHas('role', function ($roleQuery) {
-                $roleQuery->whereRaw('LOWER(name) != ?', ['admin']);
+        RotaShift::whereHas('user', function ($q) use ($hotelId) {
+                $q->where('hotel_id', $hotelId);
             })
-            ->orderBy('name');
-    }])
-    ->orderBy('name')
-    ->get();
+            ->whereBetween('shift_date', [
+                $request->from_date,
+                $request->to_date,
+            ])
+            ->update([
+                'status' => 'published',
+            ]);
 
-    // $departments = Department::with(['users' => function ($query) {
-    //     $query->where('status', 'active')->orderBy('name');
-    // }])->orderBy('name')->get();
-    
+        if (function_exists('logActivity')) {
+            logActivity('Published Rota', 'Rota', 'Rota published');
+        }
 
-    $shifts = RotaShift::with(['user', 'department'])
-        ->whereBetween('shift_date', [
-            $weekStart->copy()->format('Y-m-d'),
-            $weekStart->copy()->addDays(6)->format('Y-m-d'),
-        ])
-        ->orderBy('start_time')
-        ->get();
+        return back()->with('success', 'Rota published successfully.');
+    }
 
-    return view('dashboard.manager.rota.view', compact(
-        'departments',
-        'weekDates',
-        'weekStart',
-        'shifts'
-    ));
-}
+    public function managerView()
+    {
+        $hotelId = auth()->user()->hotel_id;
 
-public function managerRotaPdf()
-{
-    $weekStart = request('week_start')
-        ? Carbon::parse(request('week_start'))->startOfWeek()
-        : now()->startOfWeek();
+        $weekStart = request('week_start')
+            ? Carbon::parse(request('week_start'))->startOfWeek()
+            : now()->startOfWeek();
 
-    $weekDates = collect(range(0, 6))->map(function ($day) use ($weekStart) {
-        return $weekStart->copy()->addDays($day);
-    });
+        $weekDates = collect(range(0, 6))->map(function ($day) use ($weekStart) {
+            return $weekStart->copy()->addDays($day);
+        });
 
-    $departments = Department::whereRaw('LOWER(name) != ?', ['admin'])
-    ->with(['users' => function ($query) {
-        $query->where('status', 'active')
-            ->whereHas('role', function ($roleQuery) {
-                $roleQuery->whereRaw('LOWER(name) != ?', ['admin']);
+        $departments = Department::where('hotel_id', $hotelId)
+            ->with(['users' => function ($query) use ($hotelId) {
+                $query->where('hotel_id', $hotelId)
+                    ->where('status', 'active')
+                    ->whereHas('role', function ($roleQuery) {
+                        $roleQuery->whereRaw('LOWER(name) != ?', ['admin']);
+                    })
+                    ->orderBy('name');
+            }])
+            ->orderBy('name')
+            ->get();
+
+        $shifts = RotaShift::with(['user', 'department'])
+            ->whereHas('user', function ($q) use ($hotelId) {
+                $q->where('hotel_id', $hotelId);
             })
-            ->orderBy('name');
-    }])
-    ->orderBy('name')
-    ->get();
+            ->whereBetween('shift_date', [
+                $weekStart->copy()->format('Y-m-d'),
+                $weekStart->copy()->addDays(6)->format('Y-m-d'),
+            ])
+            ->orderBy('start_time')
+            ->get();
 
-    $shifts = RotaShift::with(['user', 'department'])
-        ->whereBetween('shift_date', [
-            $weekStart->copy()->format('Y-m-d'),
-            $weekStart->copy()->addDays(6)->format('Y-m-d'),
-        ])
-        ->orderBy('start_time')
-        ->get();
+        return view('dashboard.manager.rota.view', compact(
+            'departments',
+            'weekDates',
+            'weekStart',
+            'shifts'
+        ));
+    }
 
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('dashboard.manager.rota.pdf', compact(
-        'departments',
-        'weekDates',
-        'weekStart',
-        'shifts'
-    ))->setPaper('a4', 'potriate');
+    public function managerRotaPdf()
+    {
+        $hotelId = auth()->user()->hotel_id;
 
-    return $pdf->download('weekly-rota-' . $weekStart->format('Y-m-d') . '.pdf');
-}
+        $weekStart = request('week_start')
+            ? Carbon::parse(request('week_start'))->startOfWeek()
+            : now()->startOfWeek();
 
-//excel export
+        $weekDates = collect(range(0, 6))->map(function ($day) use ($weekStart) {
+            return $weekStart->copy()->addDays($day);
+        });
+
+        $departments = Department::where('hotel_id', $hotelId)
+            ->with(['users' => function ($query) use ($hotelId) {
+                $query->where('hotel_id', $hotelId)
+                    ->where('status', 'active')
+                    ->whereHas('role', function ($roleQuery) {
+                        $roleQuery->whereRaw('LOWER(name) != ?', ['admin']);
+                    })
+                    ->orderBy('name');
+            }])
+            ->orderBy('name')
+            ->get();
+
+        $shifts = RotaShift::with(['user', 'department'])
+            ->whereHas('user', function ($q) use ($hotelId) {
+                $q->where('hotel_id', $hotelId);
+            })
+            ->whereBetween('shift_date', [
+                $weekStart->copy()->format('Y-m-d'),
+                $weekStart->copy()->addDays(6)->format('Y-m-d'),
+            ])
+            ->orderBy('start_time')
+            ->get();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('dashboard.manager.rota.pdf', compact(
+            'departments',
+            'weekDates',
+            'weekStart',
+            'shifts'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->download('weekly-rota-' . $weekStart->format('Y-m-d') . '.pdf');
+    }
 }

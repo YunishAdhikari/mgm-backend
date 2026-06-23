@@ -9,9 +9,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('departments', function (Blueprint $table) {
+
             $table->id();
-            $table->string('name')->unique();
+
+          $table->foreignId('hotel_id')
+            ->nullable()
+            ->constrained()
+            ->nullOnDelete();
+
+            $table->string('name');
+
             $table->timestamps();
+
+            $table->unique(['hotel_id', 'name']);
         });
     }
 

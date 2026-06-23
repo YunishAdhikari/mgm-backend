@@ -4,21 +4,16 @@
 @section('page-title', 'Employees')
 
 @section('content')
+<section class="employee-page">
 
-<section class="card employee-card">
-
-    <div class="card-header employee-header">
+    <div class="employee-top">
         <div>
-            <h2>
-                <i class="fas fa-users"></i>
-                Employees
-                <span class="emp-count" id="total-count">{{ $users->total() }}</span>
-            </h2>
-            <p>Manage employee details, status and access.</p>
+            <h1>Employees</h1>
+            <p>MGM One Platform Admin / Employees</p>
         </div>
 
-        <a href="{{ route('addemp') }}" class="add-employee-btn">
-            <i class="fas fa-user-plus"></i>
+        <a href="{{ route('addemp') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i>
             Add Employee
         </a>
     </div>
@@ -30,525 +25,679 @@
         </div>
     @endif
 
-    <div class="search-box">
-        <div class="search-input">
-            <i class="fas fa-search"></i>
-            <input type="text" id="search-input" value="{{ request('search') }}" placeholder="Search name, email, role, department...">
+    <div class="stats-grid employee-stats">
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="fas fa-users"></i></div>
+            <div>
+                <div class="stat-value">{{ $users->total() }}</div>
+                <div class="stat-label">Total Employees</div>
+            </div>
         </div>
 
-        <button type="button" id="search-btn" class="search-btn">
-            <i class="fas fa-search"></i> Search
-        </button>
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
+            <div>
+                <div class="stat-value">{{ $users->where('status', 'active')->count() }}</div>
+                <div class="stat-label">Active</div>
+            </div>
+        </div>
 
-        <button type="button" id="reset-btn" class="reset-btn">
-            <i class="fas fa-rotate-right"></i> Reset
-        </button>
+        <div class="stat-card">
+            <div class="stat-icon orange"><i class="fas fa-circle-xmark"></i></div>
+            <div>
+                <div class="stat-value">{{ $users->where('status', 'inactive')->count() }}</div>
+                <div class="stat-label">Inactive</div>
+            </div>
+        </div>
     </div>
 
-    <div class="loading-indicator" id="loading" style="display: none;">
-        <div class="spinner"></div>
-        <span>Searching...</span>
-    </div>
+    <div class="employee-panel">
 
-    <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Employee</th>
-                    <th>Email</th>
-                    <th>Position</th>
-                    <th>Department</th>
-                    <th>Start Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+        <div class="search-box">
+            <div class="search-input">
+                <i class="fas fa-search"></i>
+                <input type="text"
+                       id="search-input"
+                       value="{{ request('search') }}"
+                       placeholder="Search name, email, hotel, role, department, code...">
+            </div>
 
-            <tbody id="employee-table-body">
-                @forelse($users as $user)
-                    <tr>
-                        <td>
-                            <div class="emp-info">
-                                @if($user->image)
-                                    <img src="{{ asset('storage/' . $user->image) }}" alt="{{ $user->name }}">
-                                @else
-                                    <div class="emp-avatar">
-                                        {{ strtoupper(substr($user->name, 0, 1)) }}
-                                    </div>
-                                @endif
-                                <div>
-                                    <strong>{{ $user->name }}</strong>
+            <button type="button" id="search-btn" class="search-btn">
+                <i class="fas fa-search"></i>
+                Search
+            </button>
+
+            <button type="button" id="reset-btn" class="reset-btn">
+                <i class="fas fa-rotate-right"></i>
+                Reset
+            </button>
+        </div>
+
+        <div class="loading-indicator" id="loading" style="display:none;">
+            <div class="spinner"></div>
+            <span>Searching...</span>
+        </div>
+
+        <div class="employee-grid" id="employee-table-body">
+            @forelse($users as $user)
+                <div class="employee-card">
+
+                    <div class="employee-cover">
+                        <span class="status-pill {{ ($user->status ?? 'active') === 'active' ? 'active' : 'inactive' }}">
+                            {{ ucfirst($user->status ?? 'active') }}
+                        </span>
+
+                        <div class="employee-photo-wrap">
+                            @if($user->image)
+                                <img src="{{ asset('storage/' . $user->image) }}" alt="{{ $user->name }}" class="employee-photo">
+                            @else
+                                <div class="employee-photo fallback">
+                                    {{ strtoupper(substr($user->name, 0, 1)) }}
                                 </div>
-                            </div>
-                        </td>
-                        <td><span class="email-text">{{ $user->email }}</span></td>
-                        <td><span class="role-badge">{{ ucfirst($user->role->name ?? 'N/A') }}</span></td>
-                        <td><span class="dept-text">{{ $user->department->name ?? 'N/A' }}</span></td>
-                        <td><span class="date-text">{{ $user->created_at ? $user->created_at->format('d M Y') : 'N/A' }}</span></td>
-                        <td>
-                            <span class="status-badge {{ ($user->status ?? 'active') === 'active' ? 'active' : 'inactive' }}">
-                                {{ ucfirst($user->status ?? 'active') }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <form method="POST" action="{{ route('admin.users.status', $user->id) }}" class="ajax-form">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="action-btn {{ ($user->status ?? 'active') === 'active' ? 'deactivate' : 'activate' }}">
-                                        {{ ($user->status ?? 'active') === 'active' ? 'Deactivate' : 'Activate' }}
-                                    </button>
-                                </form>
-                                <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}" onsubmit="return confirm('Delete this employee?')" class="ajax-form">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="action-btn delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="empty-cell">
-                            <i class="fas fa-users"></i>
-                            <p>No employees found.</p>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                            @endif
+                        </div>
+                    </div>
 
-    <div class="pagination-wrapper" id="pagination-wrapper">
-        {{ $users->links() }}
-    </div>
+                    <div class="employee-body">
+                        <h2>{{ $user->name }}</h2>
 
+                        <span class="role-badge">
+                            {{ ucfirst($user->role->name ?? 'N/A') }}
+                        </span>
+
+                        <div class="employee-mini-grid">
+                            <div>
+                                <i class="fas fa-id-card"></i>
+                                <strong>{{ $user->employee_code ?? 'No Code' }}</strong>
+                                <span>Employee Code</span>
+                            </div>
+
+                            <div>
+                                <i class="fas fa-hotel"></i>
+                                <strong>{{ $user->hotel->name ?? 'Platform Admin' }}</strong>
+                                <span>Hotel</span>
+                            </div>
+                        </div>
+
+                        <div class="employee-details">
+                            <div>
+                                <span><i class="fas fa-envelope"></i> Email</span>
+                                <strong>{{ $user->email }}</strong>
+                            </div>
+
+                            <div>
+                                <span><i class="fas fa-phone"></i> Phone</span>
+                                <strong>{{ $user->phone ?? '-' }}</strong>
+                            </div>
+
+                            <div>
+                                <span><i class="fas fa-building"></i> Department</span>
+                                <strong>{{ $user->department->name ?? 'N/A' }}</strong>
+                            </div>
+
+                            <div>
+                                <span><i class="fas fa-briefcase"></i> Job Title</span>
+                                <strong>{{ $user->job_title ?? '-' }}</strong>
+                            </div>
+
+                            <div>
+                                <span><i class="fas fa-calendar"></i> Joined</span>
+                                <strong>{{ $user->created_at ? $user->created_at->format('d M Y') : 'N/A' }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="employee-actions">
+                            <form method="POST" action="{{ route('admin.users.status', $user->id) }}">
+                                @csrf
+                                @method('PATCH')
+
+                                <button type="submit"
+                                        class="employee-btn {{ ($user->status ?? 'active') === 'active' ? 'warning' : 'success' }}">
+                                    <i class="fas {{ ($user->status ?? 'active') === 'active' ? 'fa-pause-circle' : 'fa-check-circle' }}"></i>
+                                    {{ ($user->status ?? 'active') === 'active' ? 'Deactivate' : 'Activate' }}
+                                </button>
+                            </form>
+
+                            <form method="POST"
+                                  action="{{ route('admin.users.destroy', $user->id) }}"
+                                  onsubmit="return confirm('Delete this employee?')">
+                                @csrf
+                                @method('DELETE')
+
+                                <button type="submit" class="employee-btn danger">
+                                    <i class="fas fa-trash"></i>
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="empty-employees">
+                    <i class="fas fa-users"></i>
+                    <h2>No employees found</h2>
+                    <p>Create your first employee for MGM One.</p>
+                </div>
+            @endforelse
+        </div>
+
+        <div class="pagination-wrapper" id="pagination-wrapper">
+            {{ $users->links() }}
+        </div>
+    </div>
 </section>
 
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('search-input');
     const searchBtn = document.getElementById('search-btn');
     const resetBtn = document.getElementById('reset-btn');
     const loading = document.getElementById('loading');
-    const tableBody = document.getElementById('employee-table-body');
+    const employeeGrid = document.getElementById('employee-table-body');
     const paginationWrapper = document.getElementById('pagination-wrapper');
-    const totalCount = document.getElementById('total-count');
-    const successMessage = document.getElementById('success-message');
 
-    if (successMessage) setTimeout(() => successMessage.style.display = 'none', 3000);
+    let timer = null;
 
-    function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-            clearInterval(timeout);
-            timeout = setTimeout(() => func(...args), wait);
-        };
+    function setLoading(state) {
+        loading.style.display = state ? 'flex' : 'none';
+        employeeGrid.style.opacity = state ? '0.35' : '1';
     }
 
-    function performSearch() {
-        const searchTerm = searchInput.value;
-        loading.style.display = 'flex';
-        tableBody.style.opacity = '0.5';
-        
-        fetch('{{ route("dashboard.admin.showemp") }}?search=' + encodeURIComponent(searchTerm), {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    function buildUrl(pageUrl = null) {
+        const url = new URL(pageUrl || '{{ route("dashboard.admin.showemp") }}', window.location.origin);
+        const search = searchInput.value.trim();
+
+        if (search) {
+            url.searchParams.set('search', search);
+        } else {
+            url.searchParams.delete('search');
+        }
+
+        url.searchParams.set('_', Date.now());
+
+        return url.toString();
+    }
+
+    function performSearch(pageUrl = null) {
+        setLoading(true);
+
+        fetch(buildUrl(pageUrl), {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html'
+            },
+            cache: 'no-store'
         })
         .then(response => response.text())
         .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newTableBody = doc.getElementById('employee-table-body');
-            if (newTableBody) tableBody.innerHTML = newTableBody.innerHTML;
-            const newCount = doc.getElementById('total-count');
-            if (newCount) totalCount.textContent = newCount.textContent;
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+
+            const newGrid = doc.getElementById('employee-table-body');
             const newPagination = doc.getElementById('pagination-wrapper');
-            if (newPagination) paginationWrapper.innerHTML = newPagination.innerHTML;
+
+            if (newGrid) {
+                employeeGrid.innerHTML = newGrid.innerHTML;
+            }
+
+            if (newPagination) {
+                paginationWrapper.innerHTML = newPagination.innerHTML;
+            }
+
+            const cleanUrl = buildUrl().replace(/([&?])_=\d+/, '');
+            window.history.replaceState({}, '', cleanUrl);
         })
-        .catch(error => console.error('Error:', error))
+        .catch(error => {
+            console.error('Employee search failed:', error);
+        })
         .finally(() => {
-            loading.style.display = 'none';
-            tableBody.style.opacity = '1';
+            setLoading(false);
         });
     }
 
-    searchBtn.addEventListener('click', performSearch);
-    searchInput.addEventListener('keypress', e => { if (e.key === 'Enter') performSearch(); });
-    searchInput.addEventListener('input', debounce(performSearch, 500));
-    resetBtn.addEventListener('click', () => { searchInput.value = ''; performSearch(); });
+    searchBtn.addEventListener('click', function () {
+        performSearch();
+    });
 
-    document.addEventListener('click', function(e) {
-        const paginationLink = e.target.closest('.pagination a') || e.target.closest('.pagination-wrapper nav a');
-        if (paginationLink) {
+    searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
             e.preventDefault();
-            loading.style.display = 'flex';
-            fetch(paginationLink.href + '&search=' + encodeURIComponent(searchInput.value), {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(response => response.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                tableBody.innerHTML = doc.getElementById('employee-table-body').innerHTML;
-                paginationWrapper.innerHTML = doc.getElementById('pagination-wrapper').innerHTML;
-            })
-            .finally(() => { loading.style.display = 'none'; tableBody.style.opacity = '1'; });
+            performSearch();
+        }
+    });
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            performSearch();
+        }, 500);
+    });
+
+    resetBtn.addEventListener('click', function () {
+        searchInput.value = '';
+        performSearch();
+    });
+
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('#pagination-wrapper a');
+
+        if (link) {
+            e.preventDefault();
+            performSearch(link.href);
         }
     });
 });
 </script>
 
 <style>
-    :root {
-        --bg-card: #27272a;
-        --bg-input: #1c1c1f;
-        --text-main: #fafafa;
-        --text-muted: #a1a1aa;
-        --text-dim: #71717a;
-        --border: #3f3f46;
-        --primary: #8b5cf6;
-        --primary-hover: #a78bfa;
+.employee-page {
+    animation: fadeIn .35s ease;
+}
+
+.employee-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.employee-top h1 {
+    font-size: 34px;
+    font-weight: 900;
+}
+
+.employee-top p {
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.success-message {
+    background: rgba(34,197,94,.12);
+    border: 1px solid rgba(34,197,94,.35);
+    color: #4ade80;
+    padding: 14px 18px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.employee-stats {
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.employee-panel {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: 22px;
+    padding: 24px;
+}
+
+.search-box {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 260px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-input);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 0 16px;
+}
+
+.search-input i {
+    color: var(--primary);
+}
+
+.search-input input {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 15px 0;
+}
+
+.search-btn,
+.reset-btn {
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+}
+
+.search-btn {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+}
+
+.reset-btn {
+    background: #1c1c1c;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.loading-indicator {
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+    color: var(--text-muted);
+    font-weight: 800;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid var(--border);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.employee-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.employee-card {
+    background: linear-gradient(180deg, #171717, #101010);
+    border: 2px solid var(--border);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(0,0,0,.35);
+    transition: all .25s ease;
+}
+
+.employee-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary);
+    box-shadow: 0 25px 70px rgba(232,45,45,.18);
+}
+
+.employee-cover {
+    height: 205px;
+    position: relative;
+    background:
+        radial-gradient(circle at 50% 20%, rgba(232,45,45,.32), transparent 35%),
+        linear-gradient(135deg, #3a0909, #121212 65%);
+    border-bottom: 1px solid var(--border);
+}
+
+.status-pill {
+    position: absolute;
+    right: 18px;
+    top: 18px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.status-pill.active {
+    color: #4ade80;
+    background: rgba(34,197,94,.15);
+}
+
+.status-pill.inactive {
+    color: #f87171;
+    background: rgba(239,68,68,.15);
+}
+
+.employee-photo-wrap {
+    position: absolute;
+    left: 50%;
+    bottom: -58px;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    padding: 5px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    box-shadow: 0 0 45px rgba(232,45,45,.35);
+}
+
+.employee-photo {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #161616;
+    object-fit: cover;
+    border: 4px solid #101010;
+}
+
+.employee-photo.fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    font-weight: 900;
+    color: white;
+}
+
+.employee-body {
+    padding: 76px 24px 24px;
+    text-align: center;
+}
+
+.employee-body h2 {
+    font-size: 26px;
+    font-weight: 900;
+    margin-bottom: 8px;
+}
+
+.role-badge {
+    display: inline-flex;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: rgba(232,45,45,.12);
+    color: #ff8a8a;
+    border: 1px solid rgba(232,45,45,.35);
+    font-size: 12px;
+    font-weight: 900;
+    margin-bottom: 20px;
+}
+
+.employee-mini-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.employee-mini-grid div {
+    padding: 15px;
+    text-align: left;
+    background: rgba(0,0,0,.22);
+}
+
+.employee-mini-grid div:first-child {
+    border-right: 1px solid var(--border);
+}
+
+.employee-mini-grid i {
+    color: var(--primary);
+    margin-right: 8px;
+}
+
+.employee-mini-grid strong {
+    display: block;
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+.employee-mini-grid span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.employee-details {
+    display: grid;
+    gap: 13px;
+    text-align: left;
+}
+
+.employee-details div {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.employee-details span {
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.employee-details span i {
+    color: var(--primary);
+    width: 20px;
+}
+
+.employee-details strong {
+    color: var(--text-main);
+    text-align: right;
+    word-break: break-word;
+}
+
+.employee-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.employee-btn {
+    width: 100%;
+    padding: 13px 12px;
+    border-radius: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+}
+
+.employee-btn.warning {
+    background: rgba(251,191,36,.14);
+    color: #fbbf24;
+    border: 1px solid rgba(251,191,36,.35);
+}
+
+.employee-btn.success {
+    background: rgba(34,197,94,.14);
+    color: #4ade80;
+    border: 1px solid rgba(34,197,94,.35);
+}
+
+.employee-btn.danger {
+    background: rgba(239,68,68,.14);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,.35);
+}
+
+.empty-employees {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px;
+    border: 2px dashed var(--border);
+    border-radius: 22px;
+    color: var(--text-muted);
+}
+
+.empty-employees i {
+    font-size: 48px;
+    color: var(--primary);
+    margin-bottom: 14px;
+}
+
+.pagination-wrapper {
+    margin-top: 24px;
+}
+
+.pagination-wrapper nav svg {
+    width: 16px;
+    height: 16px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1100px) {
+    .employee-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .employee-panel {
+        padding: 16px;
+    }
+
+    .employee-grid {
+        grid-template-columns: 1fr;
     }
 
     .employee-card {
-        border-radius: 16px;
-        border: none;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        border-radius: 18px;
     }
 
-    .employee-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 24px;
-        padding-bottom: 20px;
+    .employee-cover {
+        height: 180px;
+    }
+
+    .employee-photo-wrap {
+        width: 125px;
+        height: 125px;
+        bottom: -48px;
+    }
+
+    .employee-body {
+        padding-top: 64px;
+    }
+
+    .employee-mini-grid,
+    .employee-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .employee-mini-grid div:first-child {
+        border-right: none;
         border-bottom: 1px solid var(--border);
     }
 
-    .employee-header h2 {
-        font-size: 24px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: var(--text-main);
+    .employee-details div {
+        flex-direction: column;
+        gap: 4px;
     }
 
-    .employee-header h2 i { color: var(--primary); }
-
-    .emp-count {
-        font-size: 14px;
-        background: var(--bg-input);
-        color: var(--text-muted);
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-weight: 600;
-    }
-
-    .employee-header p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
-
-    .add-employee-btn {
-        text-decoration: none;
-        background: linear-gradient(135deg, var(--primary), #ec4899);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 12px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        transition: all 0.3s ease;
-    }
-
-    .add-employee-btn:hover { transform: translateY(-2px); }
-
-    .success-message {
-        background: rgba(16, 185, 129, 0.15);
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        color: #6ee7b7;
-        padding: 14px 18px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .search-box {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-    }
-
-    .search-input {
-        flex: 1;
-        min-width: 200px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        background: var(--bg-input);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 0 16px;
-    }
-
-    .search-input i { color: var(--text-dim); }
-
-    .search-input input {
-        flex: 1;
-        padding: 14px 0;
-        border: none;
-        outline: none;
-        background: transparent;
-        font-size: 14px;
-        color: var(--text-main);
-    }
-
-    .search-input input::placeholder { color: var(--text-dim); }
-
-    .search-btn, .reset-btn {
-        padding: 14px 24px;
-        border: none;
-        border-radius: 12px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .search-btn { background: var(--primary); color: white; }
-    .reset-btn { background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border); }
-
-    .loading-indicator {
-        display: none;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        padding: 20px;
-        color: var(--text-muted);
-        font-weight: 600;
-    }
-
-    .spinner {
-        width: 20px;
-        height: 20px;
-        border: 3px solid var(--border);
-        border-top: 3px solid var(--primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-    .table-wrapper {
-        overflow-x: auto;
-        border-radius: 16px;
-        border: 1px solid var(--border);
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .data-table thead { background: var(--bg-input); }
-
-    .data-table th {
-        padding: 16px 12px;
-        color: var(--text-muted);
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
+    .employee-details strong {
         text-align: left;
-        white-space: nowrap;
-        border-bottom: 1px solid var(--border);
     }
 
-    .data-table td {
-        padding: 16px 12px;
-        border-bottom: 1px solid var(--border);
-        font-size: 14px;
-        color: var(--text-main);
-    }
-
-    .emp-info { display: flex; align-items: center; gap: 12px; }
-
-    .emp-info img, .emp-avatar {
-        width: 45px;
-        height: 45px;
-        min-width: 45px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .emp-avatar {
-        background: linear-gradient(135deg, var(--primary), #ec4899);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 16px;
-    }
-
-    .emp-info strong { color: var(--text-main); }
-
-    .email-text, .dept-text, .date-text {
-        color: var(--text-muted);
-        font-weight: 500;
-        max-width: 150px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: block;
-    }
-
-    .role-badge {
-        display: inline-block;
-        padding: 6px 12px;
-        background: rgba(139, 92, 246, 0.15);
-        color: #a78bfa;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .status-badge.active { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
-    .status-badge.inactive { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
-
-    .action-buttons { display: flex; gap: 8px; }
-
-    .action-btn {
-        padding: 8px 12px;
-        border: none;
-        border-radius: 10px;
-        font-size: 11px;
-        font-weight: 700;
-        cursor: pointer;
-        white-space: nowrap;
-    }
-
-    .action-btn.deactivate { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-    .action-btn.activate { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
-    .action-btn.delete { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
-
-    .action-btn:hover { transform: translateY(-2px); }
-
-    .empty-cell {
-        text-align: center;
-        padding: 40px;
-        color: var(--text-dim);
-    }
-
-    .empty-cell i { font-size: 40px; margin-bottom: 12px; display: block; }
-
-    /* Fixes for Laravel Native Pagination Rendering */
-    .pagination-wrapper { 
-        margin-top: 24px; 
-        display: flex; 
-        justify-content: flex-end; 
-    }
-
-    .pagination-wrapper nav {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+    .search-input,
+    .search-btn,
+    .reset-btn {
         width: 100%;
-        flex-wrap: wrap;
-        gap: 16px;
     }
-
-    .pagination-wrapper nav div p {
-        color: var(--text-muted);
-        font-size: 14px;
-        margin: 0;
-    }
-
-    .pagination-wrapper nav > div {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .pagination-wrapper .pagination,
-    .pagination-wrapper nav span[role="navigation"],
-    .pagination-wrapper nav div:last-child {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        list-style-type: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .pagination-wrapper nav svg {
-        width: 16px;
-        height: 16px;
-        display: inline-block;
-        vertical-align: middle;
-    }
-
-    .pagination-wrapper nav a,
-    .pagination-wrapper nav span.page-link,
-    .pagination-wrapper nav [aria-current="page"] span,
-    .pagination-wrapper nav [disabled] span {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 36px;
-        height: 36px;
-        padding: 0 12px;
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--text-main);
-        background: var(--bg-input);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .pagination-wrapper nav a:hover {
-        border-color: var(--primary);
-        color: var(--primary-hover);
-        transform: translateY(-1px);
-    }
-
-    .pagination-wrapper nav [aria-current="page"] span,
-    .pagination-wrapper nav .active span {
-        background: var(--primary);
-        border-color: var(--primary);
-        color: #ffffff;
-    }
-
-    .pagination-wrapper nav [disabled] span,
-    .pagination-wrapper nav .disabled span {
-        opacity: 0.4;
-        cursor: not-allowed;
-        background: transparent;
-    }
-
-    @media (max-width: 768px) {
-        .employee-header { flex-direction: column; align-items: stretch; }
-        .add-employee-btn { justify-content: center; }
-        .search-box { flex-direction: column; }
-        .search-input, .search-btn, .reset-btn { width: 100%; }
-        .pagination-wrapper nav { justify-content: center; flex-direction: column; text-align: center; }
-        .pagination-wrapper nav > div { flex-direction: column; gap: 12px; }
-    }
+}
 </style>
-
 @endsection

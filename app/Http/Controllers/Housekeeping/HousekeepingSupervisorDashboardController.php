@@ -7,49 +7,47 @@ use App\Models\HousekeepingRoomAllocation;
 
 class HousekeepingSupervisorDashboardController extends Controller
 {
-        public function index()
+    public function index()
     {
         $today = today();
+        $hotelId = auth()->user()->hotel_id;
 
         $todayAllocations = HousekeepingRoomAllocation::with([
                 'room',
                 'assignedTo',
                 'roomStatusUpdate',
             ])
+            ->whereHas('room', function ($query) use ($hotelId) {
+                $query->where('hotel_id', $hotelId);
+            })
             ->whereDate('allocation_date', $today)
             ->get();
 
         $totalRooms = $todayAllocations->count();
 
-        $pending = $todayAllocations->whereIn('cleaning_status', ['assigned', 'pending'])->count();
-        $inProgress = $todayAllocations->where('cleaning_status', 'in_progress')->count();
-        $cleaned = $todayAllocations->where('cleaning_status', 'cleaned')->count();
-        $inspected = $todayAllocations->where('cleaning_status', 'inspected')->count();
-        $dnd = $todayAllocations->where('cleaning_status', 'dnd')->count();
-        $refused = $todayAllocations->where('cleaning_status', 'refused_service')->count();
+        $pending = $todayAllocations
+            ->whereIn('cleaning_status', ['assigned', 'pending'])
+            ->count();
 
-        $departureRooms = $todayAllocations->filter(function ($allocation) {
-            $status = strtolower($allocation->roomStatusUpdate->status ?? '');
+        $inProgress = $todayAllocations
+            ->where('cleaning_status', 'in_progress')
+            ->count();
 
-            return in_array($status, [
-                'departure',
-                'room_move',
-                'carry_forward',
-            ]);
-        })->count();
+        $cleaned = $todayAllocations
+            ->where('cleaning_status', 'cleaned')
+            ->count();
 
-        $stayRooms = $todayAllocations->filter(function ($allocation) {
-            $status = strtolower($allocation->roomStatusUpdate->status ?? '');
+        $inspected = $todayAllocations
+            ->where('cleaning_status', 'inspected')
+            ->count();
 
-            return $status === 'stay';
-        })->count();
+        $dnd = $todayAllocations
+            ->where('cleaning_status', 'dnd')
+            ->count();
 
-        $allocatedMinutes =
-            ($departureRooms * 30)
-            +
-            ($stayRooms * 15);
-
-        $allocatedHours = round($allocatedMinutes / 60, 1);
+        $refused = $todayAllocations
+            ->where('cleaning_status', 'refused_service')
+            ->count();
 
         $departureRooms = $todayAllocations->filter(function ($allocation) {
             $status = strtolower($allocation->roomStatusUpdate->status ?? '');
@@ -70,6 +68,12 @@ class HousekeepingSupervisorDashboardController extends Controller
             ]);
         })->count();
 
+        $allocatedMinutes =
+            ($departureRooms * 30) +
+            ($stayRooms * 15);
+
+        $allocatedHours = round($allocatedMinutes / 60, 1);
+
         $staffSummary = $todayAllocations
             ->groupBy('assigned_to')
             ->map(function ($items) {
@@ -77,8 +81,14 @@ class HousekeepingSupervisorDashboardController extends Controller
                     'name' => $items->first()->assignedTo->name ?? 'Unknown Staff',
                     'rooms' => $items->count(),
                     'minutes' => $items->sum('estimated_minutes'),
-                    'cleaned' => $items->whereIn('cleaning_status', ['cleaned', 'inspected'])->count(),
-                    'pending' => $items->whereIn('cleaning_status', ['assigned', 'pending'])->count(),
+                    'cleaned' => $items->whereIn('cleaning_status', [
+                        'cleaned',
+                        'inspected'
+                    ])->count(),
+                    'pending' => $items->whereIn('cleaning_status', [
+                        'assigned',
+                        'pending'
+                    ])->count(),
                 ];
             })
             ->values();
@@ -87,9 +97,14 @@ class HousekeepingSupervisorDashboardController extends Controller
         $weekDays = collect();
 
         for ($i = 0; $i < 7; $i++) {
+
             $date = $weekStart->copy()->addDays($i);
 
-            $allocations = HousekeepingRoomAllocation::whereDate('allocation_date', $date)->get();
+            $allocations = HousekeepingRoomAllocation::whereHas('room', function ($query) use ($hotelId) {
+                    $query->where('hotel_id', $hotelId);
+                })
+                ->whereDate('allocation_date', $date)
+                ->get();
 
             $weekDays->push([
                 'day' => $date->format('D'),

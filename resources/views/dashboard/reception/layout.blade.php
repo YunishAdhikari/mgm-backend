@@ -1,18 +1,26 @@
+@php
+    $currentHotel = auth()->user()->hotel ?? null;
+    $hotelName = $currentHotel->name ?? 'MGM One';
+    $hotelCode = $currentHotel->code ?? 'Multi Hotel';
+    $roleName = ucfirst(auth()->user()->role->name ?? 'Reception');
+@endphp
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Reception Dashboard') - MGRH</title>
-  <link rel="icon" type="image/png" href="{{ asset('myapp.png') }}">
+    <title>@yield('title', 'Reception Dashboard') - {{ $hotelName }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('myapp.png') }}">
 
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    
+
     @yield('styles')
+
+
 
     <style>
         :root {
@@ -476,18 +484,16 @@
 <body>
 
 <div class="layout">
-    <!-- Mobile Header -->
     <div class="mobile-header">
         <div class="mobile-header-content">
             <button class="menu-toggle" onclick="toggleSidebar()">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <div class="mobile-logo">MGRH</div>
+            <div class="mobile-logo">{{ $hotelCode }}</div>
             <div style="width: 46px;"></div>
         </div>
     </div>
 
-    <!-- Sidebar Overlay -->
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <aside class="sidebar" id="sidebar">
@@ -496,51 +502,81 @@
                 <div class="logo-icon">
                     <i class="fa-solid fa-hotel"></i>
                 </div>
-                <div class="logo-text">MGRH</div>
+                <div>
+                    <div class="logo-text" style="font-size:20px; line-height:1.1;">
+                        {{ $hotelCode }}
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); font-weight:800; text-transform:uppercase; margin-top:4px;">
+                        {{ $hotelName }}
+                    </div>
+                </div>
             </div>
         </div>
 
         <nav class="sidebar-nav">
             <div class="nav-section">
-                <div class="nav-section-title">Menu</div>
-                
-                <a href="{{ route('reception.dashboard') }}" class="nav-link {{ Request::is('reception/dashboard*') ? 'active' : '' }}">
+                <div class="nav-section-title">Hotel Operations</div>
+
+                <a href="{{ route('reception.dashboard') }}"
+                   class="nav-link {{ request()->routeIs('reception.dashboard') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
-                    <span>Dashboard</span>
+                    <span>Reception Dashboard</span>
                 </a>
-                
-                <a href="{{ route('reception.restaurant.bookings.index') }}" class="nav-link {{ Request::is('reception/restaurant*') ? 'active' : '' }}">
+
+                <a href="{{ route('reception.daily-operations.index') }}"
+                   class="nav-link {{ request()->routeIs('reception.daily-operations.index') || request()->routeIs('reception.restaurant.bookings.slots') || request()->routeIs('reception.restaurant.bookings.create') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-utensils"></i></span>
-                    <span>F&B</span>
-                </a>
-                
-                <a href="#" class="nav-link">
-                    <span class="nav-icon"><i class="fa-solid fa-spa"></i></span>
-                    <span>Spa</span>
+                    <span>Daily Operations
+                    </span>
                 </a>
 
-                <a href="{{ route('reception.group-buffets.index') }}" class="nav-link">
-                    <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
-                    <span>Group Buffets</span>
+                <a href="{{ route('reception.restaurant.bookings.index') }}"
+                   class="nav-link {{ request()->routeIs('reception.restaurant.bookings.index') || request()->routeIs('reception.restaurant.bookings.slots') || request()->routeIs('reception.restaurant.bookings.create') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="fa-solid fa-utensils"></i></span>
+                    <span>Restaurant Bookings</span>
                 </a>
 
-                                <a href="{{ route('reception.restaurant.bookings.list') }}" class="nav-link">
+                <a href="{{ route('reception.restaurant.bookings.list') }}"
+                   class="nav-link {{ request()->routeIs('reception.restaurant.bookings.list') || request()->routeIs('reception.restaurant.bookings.show') || request()->routeIs('reception.restaurant.bookings.edit') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-list"></i></span>
                     <span>Booking List</span>
                 </a>
 
-                <a href="{{ route('reception.restaurant.bookings.report') }}" class="nav-link">
+                <a href="{{ route('reception.restaurant.bookings.report') }}"
+                   class="nav-link {{ request()->routeIs('reception.restaurant.bookings.report') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-chart-column"></i></span>
                     <span>Restaurant Report</span>
                 </a>
 
-                <a href="{{ route('reception.room-status.index') }}" class="nav-link">
-                    <span class="nav-icon"><i class="fa-solid fa-broom"></i></span>
-                    <span>Housekeeping</span>
-                </a>
-                <a href="{{ route('reception.meal-forecasts.index') }}" class="nav-link">
+                <a href="{{ route('reception.group-buffets.index') }}"
+                   class="nav-link {{ request()->routeIs('reception.group-buffets.*') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
-                    <span>Groups</span>
+                    <span>Group Buffets</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Rooms & Groups</div>
+
+                <a href="{{ route('reception.room-status.index') }}"
+                   class="nav-link {{ request()->routeIs('reception.room-status.*') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="fa-solid fa-broom"></i></span>
+                    <span>Housekeeping Status</span>
+                </a>
+
+                <a href="{{ route('reception.meal-forecasts.index') }}"
+                   class="nav-link {{ request()->routeIs('reception.meal-forecasts.*') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span>
+                    <span>Meal Forecasts</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Future Modules</div>
+
+                <a href="#" class="nav-link">
+                    <span class="nav-icon"><i class="fa-solid fa-spa"></i></span>
+                    <span>Spa</span>
                 </a>
             </div>
         </nav>
@@ -552,18 +588,18 @@
                 <span class="status-indicator"></span>
                 @yield('page_title', 'Dashboard')
             </div>
-            
+
             <div class="topbar-right">
                 <div class="user-badge">
                     <div class="user-avatar">
-                        {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
                     </div>
                     <div class="user-info">
-                        <span class="user-name">{{ Auth::user()->name ?? 'User' }}</span>
-                        <span class="user-role">Receptionist</span>
+                        <span class="user-name">{{ auth()->user()->name ?? 'User' }}</span>
+                        <span class="user-role">{{ $roleName }} • {{ $hotelCode }}</span>
                     </div>
                 </div>
-                
+
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button class="topbar-btn topbar-btn-primary" type="submit">
@@ -571,7 +607,7 @@
                     </button>
                 </form>
             </div>
-        </div>                 
+        </div>
 
         <div class="content">
             @yield('content')
@@ -583,22 +619,17 @@
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.querySelector('.sidebar-overlay');
-        
+
         sidebar.classList.toggle('open');
         overlay.classList.toggle('open');
-        
-        if (overlay.classList.contains('open')) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
+
+        document.body.style.overflow = overlay.classList.contains('open') ? 'hidden' : '';
     }
 
-    // Close sidebar when clicking outside
     document.addEventListener('click', function(e) {
         const sidebar = document.getElementById('sidebar');
         const toggle = document.querySelector('.menu-toggle');
-        
+
         if (window.innerWidth <= 1024) {
             if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
                 sidebar.classList.remove('open');
@@ -608,7 +639,6 @@
         }
     });
 
-    // Handle resize
     window.addEventListener('resize', function() {
         const sidebar = document.getElementById('sidebar');
         if (window.innerWidth > 1024) {

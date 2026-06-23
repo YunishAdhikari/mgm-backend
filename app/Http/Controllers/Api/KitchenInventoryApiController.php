@@ -12,9 +12,12 @@ class KitchenInventoryApiController extends Controller
     {
         $user = $request->user();
 
+        $departmentName = strtolower($user->department->name ?? '');
+        $roleName = strtolower($user->role->name ?? '');
+
         if (
-            strtolower($user->department->name ?? '') !== 'kitchen' ||
-            !in_array(strtolower($user->role->name ?? ''), ['supervisor', 'chef'])
+            !in_array($departmentName, ['kitchen', 'food and beverage', 'f&b', 'fb']) ||
+            !in_array($roleName, ['supervisor', 'chef', 'head chef', 'kitchen supervisor'])
         ) {
             return response()->json([
                 'success' => false,
@@ -22,17 +25,33 @@ class KitchenInventoryApiController extends Controller
             ], 403);
         }
 
-        $items = InventoryItem::where('department_id', $user->department_id)
+        $items = InventoryItem::where('hotel_id', $user->hotel_id)
+            ->where('department_id', $user->department_id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get([
                 'id',
+                'hotel_id',
+                'department_id',
                 'name',
                 'category',
                 'quantity',
                 'unit',
                 'minimum_stock',
-            ]);
+            ])
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'hotel_id' => $item->hotel_id,
+                    'department_id' => $item->department_id,
+                    'name' => $item->name,
+                    'category' => $item->category,
+                    'quantity' => $item->quantity,
+                    'unit' => $item->unit,
+                    'minimum_stock' => $item->minimum_stock,
+                    'is_low_stock' => $item->quantity <= $item->minimum_stock,
+                ];
+            });
 
         return response()->json([
             'success' => true,

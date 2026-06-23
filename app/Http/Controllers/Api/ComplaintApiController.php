@@ -37,22 +37,24 @@ class ComplaintApiController extends Controller
     ]);
 
     $complaint = Complaint::create([
-        'guest_name' => $data['guest_name'],
-        'email' => $data['email'] ?? null,
-        'phone' => $data['phone'] ?? null,
-        'room_number' => $data['room_number'] ?? null,
+    'hotel_id' => auth()->user()->hotel_id,
 
-        'type' => 'complaint',
+    'guest_name' => $data['guest_name'],
+    'email' => $data['email'] ?? null,
+    'phone' => $data['phone'] ?? null,
+    'room_number' => $data['room_number'] ?? null,
 
-        'category' => $data['category'],
-        'title' => $data['title'],
-        'description' => $data['description'],
+    'type' => 'complaint',
 
-        'priority' => $data['priority'],
-        'status' => 'pending',
+    'category' => $data['category'],
+    'title' => $data['title'],
+    'description' => $data['description'],
 
-        'created_by' => auth()->id(),
-    ]);
+    'priority' => $data['priority'],
+    'status' => 'pending',
+
+    'created_by' => auth()->id(),
+]);
 
     return response()->json([
         'success' => true,

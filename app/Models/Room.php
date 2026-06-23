@@ -7,22 +7,45 @@ use Illuminate\Database\Eloquent\Model;
 class Room extends Model
 {
     protected $fillable = [
-    'room_number',
-    'room_type_id',
-    'floor',
-    'max_occupancy',
-    'is_active',
-    'notes',
-];
+        'hotel_id',
+        'room_number',
+        'room_type_id',
+        'floor',
+        'max_occupancy',
+        'status',
+        'housekeeping_status',
+        'maintenance_status',
+        'is_active',
+        'notes',
+    ];
 
-public function roomType()
-{
-    return $this->belongsTo(RoomType::class);
-}
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 
-public function statusUpdates()
-{
-    return $this->hasMany(RoomStatusUpdate::class);
-}
-}
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
+    public function hotel()
+    {
+        return $this->belongsTo(Hotel::class);
+    }
+
+    public function roomType()
+    {
+        return $this->belongsTo(RoomType::class);
+    }
+
+    public function statusUpdates()
+    {
+        return $this->hasMany(RoomStatusUpdate::class);
+    }
+
+    public function housekeepingAllocations()
+    {
+        return $this->hasMany(HousekeepingRoomAllocation::class);
+    }
+}

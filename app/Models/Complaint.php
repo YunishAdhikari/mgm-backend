@@ -7,20 +7,26 @@ use Illuminate\Database\Eloquent\Model;
 class Complaint extends Model
 {
     protected $fillable = [
-        'guest_name',
-        'email',
-        'phone',
-        'room_number',
-        'type',
-        'category',
-        'title',
-        'description',
-        'image',
-        'priority',
-        'status',
-        'handled_by',
-        'internal_note',
-    ];
+    'hotel_id',
+    'guest_name',
+    'email',
+    'phone',
+    'room_number',
+    'type',
+    'category',
+    'title',
+    'description',
+    'image',
+    'priority',
+    'status',
+    'created_by',
+    'handled_by',
+    'handled_at',
+    'internal_note',
+];
+protected $casts = [
+    'handled_at' => 'datetime',
+];
 
     protected $appends = ['image_url'];
 
@@ -28,6 +34,13 @@ class Complaint extends Model
     {
         return $this->belongsTo(User::class, 'handled_by');
     }
+
+
+    public function hotel()
+{
+    return $this->belongsTo(Hotel::class);
+}
+
 
     public function getImageUrlAttribute()
     {

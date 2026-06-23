@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class HousekeepingRoomAllocation extends Model
 {
     protected $fillable = [
+        'hotel_id',
         'room_status_update_id',
         'room_id',
         'assigned_to',
@@ -19,6 +20,24 @@ class HousekeepingRoomAllocation extends Model
         'cleaned_at',
         'inspected_at',
     ];
+
+    protected $casts = [
+        'allocation_date' => 'date',
+        'started_at' => 'datetime',
+        'cleaned_at' => 'datetime',
+        'inspected_at' => 'datetime',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function hotel()
+    {
+        return $this->belongsTo(Hotel::class);
+    }
 
     public function roomStatusUpdate()
     {

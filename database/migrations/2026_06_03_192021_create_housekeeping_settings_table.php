@@ -14,13 +14,17 @@ return new class extends Migration
         Schema::create('housekeeping_settings', function (Blueprint $table) {
     $table->id();
 
+    $table->foreignId('hotel_id')
+        ->constrained()
+        ->cascadeOnDelete();
+
     $table->integer('departure_minutes')->default(30);
-
     $table->integer('stay_minutes')->default(15);
-
     $table->integer('room_move_minutes')->default(30);
 
     $table->timestamps();
+
+    $table->unique('hotel_id');
 });
     }
 

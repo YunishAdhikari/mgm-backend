@@ -6,62 +6,61 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-
     public function up(): void
-{
-    Schema::create('rota_shifts', function (Blueprint $table) {
-        $table->id();
+    {
+        Schema::create('rota_shifts', function (Blueprint $table) {
+            $table->id();
 
-        $table->foreignId('user_id')
-            ->constrained('users')
-            ->cascadeOnDelete();
+            $table->foreignId('hotel_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-        $table->foreignId('department_id')
-            ->nullable()
-            ->constrained('departments')
-            ->nullOnDelete();
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
 
-        $table->date('shift_date');
+            $table->foreignId('department_id')
+                ->nullable()
+                ->constrained('departments')
+                ->nullOnDelete();
 
-        $table->enum('shift_type', [
-            'morning',
-            'evening',
-            'night',
-            'split',
-            'day_off',
-            'holiday',
-            'sick',
-        ])->default('morning');
+            $table->date('shift_date');
 
-        $table->time('start_time')->nullable();
-        $table->time('end_time')->nullable();
+            $table->enum('shift_type', [
+                'morning',
+                'evening',
+                'night',
+                'split',
+                'day_off',
+                'holiday',
+                'sick',
+            ])->default('morning');
 
-        $table->integer('break_minutes')->default(0);
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
 
-        $table->enum('status', [
-            'draft',
-            'published',
-        ])->default('draft');
+            $table->integer('break_minutes')->default(0);
 
-        $table->text('notes')->nullable();
+            $table->enum('status', [
+                'draft',
+                'published',
+            ])->default('draft');
 
-        $table->timestamps();
-    });
-}
-    // public function up(): void
-    // {
-    //     Schema::create('rota_shifts', function (Blueprint $table) {
-    //         $table->id();
-    //         $table->timestamps();
-    //     });
-    // }
+            $table->text('notes')->nullable();
 
-    /**
-     * Reverse the migrations.
-     */
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->timestamps();
+
+            $table->index(['hotel_id', 'shift_date']);
+            $table->index(['department_id', 'shift_date']);
+            $table->unique(['hotel_id', 'user_id', 'shift_date', 'start_time']);
+        });
+    }
+
     public function down(): void
     {
         Schema::dropIfExists('rota_shifts');

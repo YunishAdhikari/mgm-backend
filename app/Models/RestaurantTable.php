@@ -6,29 +6,36 @@ use Illuminate\Database\Eloquent\Model;
 
 class RestaurantTable extends Model
 {
- protected $fillable = [
-    'table_name',
-    'capacity',
-    'table_shape',
-    'status',
-    'position_x',
-    'position_y',
-    'is_active',
-];
-protected $casts = [
-    'is_active' => 'boolean',
-];
+    protected $fillable = [
+        'restaurant_id',
+        'table_name',
+        'capacity',
+        'table_shape',
+        'status',
+        'position_x',
+        'position_y',
+        'is_active',
+    ];
 
-public function bookings()
-{
-    return $this->hasMany(RestaurantBooking::class);
-}
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 
-public function groupBuffetBookings()
-{
-    return $this->belongsToMany(
-        GroupBuffetBooking::class,
-        'group_buffet_booking_tables'
-    );
-}
+    public function restaurant()
+    {
+        return $this->belongsTo(Restaurant::class);
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(RestaurantBooking::class);
+    }
+
+    public function groupBuffetBookings()
+    {
+        return $this->belongsToMany(
+            GroupBuffetBooking::class,
+            'group_buffet_booking_tables'
+        );
+    }
 }

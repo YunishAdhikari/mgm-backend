@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - MGM OPS</title>
+    <title>Login - MGM One</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -180,11 +180,11 @@
             <!-- Logo Section -->
             <div class="logo-section">
                 <img 
-                    src="https://www.muthuhotelsmgm.com/uploads/hotel/logo/4309af2d8f39f7f5f03b62571787780b1747654917.jpg" 
+                    src="https://www.muthuhotelsmgm.com/assets/images/logo.svg" 
                     alt="MGM Logo" 
                     class="logo"
                 >
-                <h1>MGM OPS</h1>
+                <h1>MGM One</h1>
                 <p>Sign in to continue</p>
             </div>
 

@@ -6,17 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-      Schema::create('maintenance_jobs', function (Blueprint $table) {
+        Schema::create('maintenance_jobs', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('reported_by')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('department_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('hotel_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->foreignId('reported_by')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->foreignId('department_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->foreignId('assigned_to')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->string('title');
             $table->text('description');
@@ -27,19 +37,24 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->text('note')->nullable();
 
-            $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
-            $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])->default('pending');
+            $table->enum('priority', ['low', 'medium', 'high', 'urgent'])
+                ->default('medium');
+
+            $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])
+                ->default('pending');
 
             $table->date('reported_date')->nullable();
             $table->date('completed_date')->nullable();
 
             $table->timestamps();
+
+            $table->index(['hotel_id', 'status']);
+            $table->index(['hotel_id', 'priority']);
+            $table->index(['hotel_id', 'department_id']);
+            $table->index(['hotel_id', 'assigned_to']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('maintenance_jobs');

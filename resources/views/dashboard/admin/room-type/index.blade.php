@@ -1,939 +1,666 @@
 @extends('dashboard.admin.layout')
 
-@section('title', 'Room Types')
-@section('page-title', 'Room Types')
+@section('title', $hotel->name . ' Room Categories')
+@section('page-title', 'Room Categories')
 
 @section('content')
+<section class="room-types-page">
 
-<div class="pageHeader">
-    <div class="headerLeft">
-        <div class="iconBox">
-            <i class="fas fa-layer-group"></i>
-        </div>
+    <div class="types-hero">
         <div>
-            <h1>Room Types</h1>
-            <p>Manage your accommodation categories</p>
+            <p>MGM One / {{ $hotel->name }}</p>
+            <h1>Room Categories</h1>
+            <span>Create categories such as Single, Twin, Double, Family and Suite.</span>
         </div>
-    </div>
-    
-    <button type="button" class="btnNeon" onclick="openRoomTypeModal()">
-        <i class="fas fa-plus"></i>
-        <span>Add Type</span>
-    </button>
-</div>
 
-<!-- Alert Messages -->
-@if(session('success'))
-    <div class="alertToast success">
-        <div class="icon"><i class="fas fa-check-circle"></i></div>
-        <div class="text"><strong>Success!</strong> {{ session('success') }}</div>
-        <button class="closeAlert"><i class="fas fa-times"></i></button>
+        <a href="{{ route('admin.hotels.setup', $hotel) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            Back to Setup
+        </a>
     </div>
-@endif
 
-@if($errors->any())
-    <div class="alertToast error">
-        <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
-        <div class="text"><strong>Error!</strong> {{ $errors->first() }}</div>
-        <button class="closeAlert"><i class="fas fa-times"></i></button>
-    </div>
-@endif
-
-<!-- Data Table -->
-<div class="glassCard">
-    <div class="tableHeader">
-        <div class="searchBox">
-            <i class="fas fa-search"></i>
-            <input type="text" placeholder="Search room types...">
+    @if(session('success'))
+        <div class="success-message">
+            <i class="fas fa-check-circle"></i>
+            {{ session('success') }}
         </div>
-        <span class="recordCount">{{ $roomTypes->count() }} types</span>
-    </div>
-    
-    <div class="tableWrapper">
-        <table class="neonTable">
-            <thead>
-                <tr>
-                    <th><i class="fas fa-hash"></i> ID</th>
-                    <th><i class="fas fa-font"></i> Type Name</th>
-                    <th><i class="fas fa-toggle-on"></i> Status</th>
-                    <th><i class="fas fa-bolt"></i> Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($roomTypes as $roomType)
-                    <tr>
-                        <td class="idCell">#{{ str_pad($roomType->id, 3, '0', STR_PAD_LEFT) }}</td>
-                        <td>
-                            <div class="typeName">
-                                <div class="typeIcon"><i class="fas fa-bed"></i></div>
-                                <span>{{ $roomType->name }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            @if($roomType->is_active)
-                                <span class="badgeNeon active"><span class="dot"></span>Active</span>
-                            @else
-                                <span class="badgeNeon inactive"><span class="dot"></span>Inactive</span>
-                            @endif
-                        </td>
-                        <td>
-                            <div class="actionButtons">
-                                <button type="button" class="btnIcon edit" onclick="openEditModal('{{ $roomType->id }}', '{{ addslashes($roomType->name) }}', '{{ $roomType->is_active ? 1 : 0 }}')">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                                <button type="button" class="btnIcon delete" onclick="openDeleteModal('{{ $roomType->id }}', '{{ addslashes($roomType->name) }}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="4">
-                            <div class="emptyState">
-                                <i class="fas fa-folder-open"></i>
-                                <h3>No Room Types Found</h3>
-                                <p>Get started by adding your first room type</p>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
+    @endif
 
-<!-- Add Modal -->
-<div id="roomTypeModal" class="modalOverlay">
-    <div class="modalContent">
-        <div class="modalGlow"></div>
-        <div class="modalHeader">
-            <div class="modalTitle">
-                <i class="fas fa-plus-circle"></i>
-                <h2>Add New Room Type</h2>
+    @if($errors->any())
+        <div class="error-message">
+            @foreach($errors->all() as $error)
+                <p>• {{ $error }}</p>
+            @endforeach
+        </div>
+    @endif
+
+    <div class="types-layout">
+
+        <div class="card form-card">
+            <div class="card-header">
+                <h2><i class="fas fa-plus-circle"></i> Add Category</h2>
             </div>
-            <button type="button" class="modalClose" onclick="closeRoomTypeModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <form method="POST" action="{{ route('admin.room-types.store') }}">
-            @csrf
-            <div class="inputGroup">
-                <label><i class="fas fa-font"></i> Room Type Name</label>
-                <div class="inputWrapper">
-                    <input type="text" name="name" value="{{ old('name') }}" placeholder="Enter type name..." required>
-                    <div class="inputBorder"></div>
-                </div>
-            </div>
-            <div class="toggleGroup">
-                <div class="toggleInfo">
-                    <i class="fas fa-power-off"></i>
-                    <div>
-                        <span class="toggleLabel">Active Status</span>
-                        <span class="toggleDesc">Enable visibility for booking</span>
+
+            <form method="POST" action="{{ route('admin.hotels.room-types.store', $hotel) }}">
+                @csrf
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Category Name *</label>
+                        <input type="text" name="name" value="{{ old('name') }}" placeholder="Double Room" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Code</label>
+                        <input type="text" name="code" value="{{ old('code') }}" placeholder="DBL">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Default Pax *</label>
+                        <input type="number" name="default_pax" value="{{ old('default_pax', 2) }}" min="1" max="20" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Colour</label>
+                        <input type="text" name="colour" value="{{ old('colour') }}" placeholder="#ef4444">
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" rows="3" placeholder="Optional description">{{ old('description') }}</textarea>
+                    </div>
+
+                    <div class="form-group full active-row">
+                        <label>
+                            <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') == '1' ? 'checked' : '' }}>
+                            Active Category
+                        </label>
                     </div>
                 </div>
-                <label class="toggleSwitch">
-                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') == '1' ? 'checked' : '' }}>
-                    <span class="toggleSlider"></span>
-                </label>
-            </div>
-            <div class="modalFooter">
-                <button type="button" class="btnGhost" onclick="closeRoomTypeModal()">Cancel</button>
-                <button type="submit" class="btnNeon"><i class="fas fa-save"></i> <span>Save Type</span></button>
-            </div>
-        </form>
-    </div>
-</div>
 
-<!-- Edit Modal -->
-<div id="editRoomTypeModal" class="modalOverlay">
-    <div class="modalContent">
-        <div class="modalGlow"></div>
-        <div class="modalHeader">
-            <div class="modalTitle">
-                <i class="fas fa-edit"></i>
-                <h2>Edit Room Type</h2>
-            </div>
-            <button type="button" class="modalClose" onclick="closeEditModal()">
-                <i class="fas fa-times"></i>
-            </button>
+                <button class="btn btn-primary submit-btn">
+                    <i class="fas fa-save"></i>
+                    Save Category
+                </button>
+            </form>
         </div>
-        <form method="POST" id="editRoomTypeForm">
+
+        <div class="types-panel">
+            <div class="panel-top">
+                <div>
+                    <h2>Categories</h2>
+                    <p>{{ $roomTypes->count() }} categories in {{ $hotel->name }}</p>
+                </div>
+
+                <input type="text" id="typeSearch" placeholder="Search category...">
+            </div>
+
+            <div class="types-grid" id="typesGrid">
+                @forelse($roomTypes as $roomType)
+                    <div class="type-card"
+                         data-search="{{ strtolower($roomType->name . ' ' . $roomType->code . ' ' . $roomType->default_pax) }}">
+
+                        <div class="type-card-top">
+                            <div class="type-icon" style="{{ $roomType->colour ? 'background: '.$roomType->colour.';' : '' }}">
+                                <i class="fas fa-bed"></i>
+                            </div>
+
+                            <span class="type-active {{ $roomType->is_active ? 'yes' : 'no' }}">
+                                {{ $roomType->is_active ? 'Active' : 'Inactive' }}
+                            </span>
+                        </div>
+
+                        <h3>{{ $roomType->name }}</h3>
+
+                        <div class="type-meta">
+                            <div>
+                                <small>Code</small>
+                                <strong>{{ $roomType->code ?? '-' }}</strong>
+                            </div>
+
+                            <div>
+                                <small>Default Pax</small>
+                                <strong>{{ $roomType->default_pax }}</strong>
+                            </div>
+
+                            <div>
+                                <small>Rooms</small>
+                                <strong>{{ $roomType->rooms_count ?? $roomType->rooms()->count() }}</strong>
+                            </div>
+                        </div>
+
+                        @if($roomType->description)
+                            <p class="type-description">{{ $roomType->description }}</p>
+                        @else
+                            <p class="type-description muted">No description added.</p>
+                        @endif
+
+                        <div class="type-actions">
+                            <button type="button"
+                                    class="type-btn"
+                                    onclick="openEditModal(
+                                        '{{ $roomType->id }}',
+                                        @js($roomType->name),
+                                        @js($roomType->code),
+                                        '{{ $roomType->default_pax }}',
+                                        @js($roomType->colour),
+                                        @js($roomType->description),
+                                        '{{ $roomType->is_active ? 1 : 0 }}'
+                                    )">
+                                <i class="fas fa-pen"></i>
+                                Edit
+                            </button>
+
+                            <button type="button"
+                                    class="type-btn danger"
+                                    onclick="openDeleteModal('{{ $roomType->id }}', @js($roomType->name))">
+                                <i class="fas fa-trash"></i>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                @empty
+                    <div class="empty-state">
+                        <i class="fas fa-layer-group"></i>
+                        <h2>No room categories found</h2>
+                        <p>Add the first category for this hotel.</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<div class="modal-backdrop" id="editModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2><i class="fas fa-pen"></i> Edit Category</h2>
+            <button type="button" onclick="closeEditModal()">×</button>
+        </div>
+
+        <form method="POST" id="editForm">
             @csrf
             @method('PUT')
-            <div class="inputGroup">
-                <label><i class="fas fa-font"></i> Room Type Name</label>
-                <div class="inputWrapper">
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Category Name *</label>
                     <input type="text" name="name" id="edit_name" required>
-                    <div class="inputBorder"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Code</label>
+                    <input type="text" name="code" id="edit_code">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Default Pax *</label>
+                    <input type="number" name="default_pax" id="edit_default_pax" min="1" max="20" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Colour</label>
+                    <input type="text" name="colour" id="edit_colour">
+                </div>
+
+                <div class="form-group full">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" id="edit_description" rows="3"></textarea>
+                </div>
+
+                <div class="form-group full active-row">
+                    <label>
+                        <input type="checkbox" name="is_active" value="1" id="edit_is_active">
+                        Active Category
+                    </label>
                 </div>
             </div>
-            <div class="toggleGroup">
-                <div class="toggleInfo">
-                    <i class="fas fa-power-off"></i>
-                    <div>
-                        <span class="toggleLabel">Active Status</span>
-                        <span class="toggleDesc">Enable visibility for booking</span>
-                    </div>
-                </div>
-                <label class="toggleSwitch">
-                    <input type="checkbox" name="is_active" value="1" id="edit_is_active">
-                    <span class="toggleSlider"></span>
-                </label>
-            </div>
-            <div class="modalFooter">
-                <button type="button" class="btnGhost" onclick="closeEditModal()">Cancel</button>
-                <button type="submit" class="btnNeon"><i class="fas fa-save"></i> <span>Update Type</span></button>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Category</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Delete Modal -->
-<div id="deleteRoomTypeModal" class="modalOverlay">
-    <div class="modalContent">
-        <div class="modalGlow danger"></div>
-        <div class="modalHeader">
-            <div class="modalTitle">
-                <i class="fas fa-trash" style="color: var(--danger);"></i>
-                <h2>Delete Room Type</h2>
-            </div>
-            <button type="button" class="modalClose" onclick="closeDeleteModal()">
-                <i class="fas fa-times"></i>
-            </button>
+<div class="modal-backdrop" id="deleteModal">
+    <div class="modal-card small">
+        <div class="modal-header">
+            <h2><i class="fas fa-trash"></i> Delete Category</h2>
+            <button type="button" onclick="closeDeleteModal()">×</button>
         </div>
-        <p class="deleteConfirmText">
-            Are you sure you want to delete <strong id="deleteRoomTypeName"></strong>?
+
+        <p class="delete-text">
+            Are you sure you want to delete <strong id="deleteTypeName"></strong>?
         </p>
-        <form method="POST" id="deleteRoomTypeForm">
+
+        <form method="POST" id="deleteForm">
             @csrf
             @method('DELETE')
-            <div class="modalFooter">
-                <button type="button" class="btnGhost" onclick="closeDeleteModal()">Cancel</button>
-                <button type="submit" class="btnNeon danger"><i class="fas fa-trash"></i> <span>Yes, Delete</span></button>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary danger-btn">Delete</button>
             </div>
         </form>
     </div>
 </div>
 
 <style>
-/* ===== CSS Variables ===== */
-:root {
-    --bg-dark: #0a0a0f;
-    --bg-card: #12121a;
-    --bg-elevated: #1a1a25;
-    --border-subtle: rgba(255,255,255,0.06);
-    --border-light: rgba(255,255,255,0.1);
-    --primary: #6366f1;
-    --primary-glow: rgba(99, 102, 241, 0.4);
-    --accent: #22d3ee;
-    --accent-glow: rgba(34, 211, 238, 0.3);
-    --success: #10b981;
-    --danger: #ef4444;
-    --text-main: #f1f5f9;
-    --text-muted: #64748b;
-    --text-dim: #475569;
-    --font-main: 'Inter', -apple-system, sans-serif;
-    --radius: 12px;
-    --radius-lg: 20px;
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.types-hero {
+    background: radial-gradient(circle at 20% 20%, rgba(232,45,45,.28), transparent 35%), linear-gradient(135deg, #2a0606, #101010 70%);
+    border: 2px solid var(--border);
+    border-radius: 24px;
+    padding: 28px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-* { box-sizing: border-box; }
+.types-hero p {
+    color: var(--primary);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 12px;
+}
 
-body {
-    background: var(--bg-dark);
+.types-hero h1 {
+    font-size: 34px;
+    font-weight: 900;
+    margin-top: 8px;
+}
+
+.types-hero span {
+    color: var(--text-muted);
+    display: block;
+    margin-top: 8px;
+}
+
+.success-message,
+.error-message {
+    padding: 14px 18px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-weight: 800;
+}
+
+.success-message {
+    background: rgba(34,197,94,.12);
+    border: 1px solid rgba(34,197,94,.35);
+    color: #4ade80;
+}
+
+.error-message {
+    background: rgba(239,68,68,.12);
+    border: 1px solid rgba(239,68,68,.35);
+    color: #f87171;
+}
+
+.types-layout {
+    display: grid;
+    grid-template-columns: 390px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.form-card {
+    position: sticky;
+    top: 96px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.form-group.full {
+    grid-column: 1 / -1;
+}
+
+textarea {
+    width: 100%;
+    padding: 14px 18px;
+    background: var(--bg-input);
+    border: 2px solid var(--border);
+    border-radius: 10px;
     color: var(--text-main);
-    font-family: var(--font-main);
+    font-weight: 600;
+    resize: vertical;
 }
 
-/* ===== Page Header ===== */
-.pageHeader {
+.active-row label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-weight: 900;
+}
+
+.submit-btn {
+    width: 100%;
+    margin-top: 20px;
+}
+
+.types-panel {
+    background: linear-gradient(180deg, #171717, #101010);
+    border: 2px solid var(--border);
+    border-radius: 24px;
+    padding: 22px;
+}
+
+.panel-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.panel-top h2 {
+    font-size: 26px;
+    font-weight: 900;
+}
+
+.panel-top p {
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+
+#typeSearch {
+    max-width: 280px;
+}
+
+.types-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.type-card {
+    background: #0d0d0d;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    transition: .25s ease;
+}
+
+.type-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: 0 18px 45px rgba(232,45,45,.14);
+}
+
+.type-card-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 28px;
-    animation: fadeSlideDown 0.5s ease;
 }
 
-.headerLeft { display: flex; align-items: center; gap: 16px; }
-
-.iconBox {
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, var(--primary), #8b5cf6);
-    border-radius: 16px;
+.type-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: rgba(232,45,45,.14);
+    color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    color: white;
-    box-shadow: 0 8px 32px var(--primary-glow);
 }
 
-.headerLeft h1 {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text-main);
-    margin: 0;
-    letter-spacing: -0.5px;
+.type-card h3 {
+    margin-top: 18px;
+    font-size: 23px;
+    font-weight: 900;
 }
 
-.headerLeft p {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin: 4px 0 0;
-}
-
-/* ===== Buttons ===== */
-.btnNeon {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, var(--primary), #818cf8);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-    box-shadow: 0 4px 20px var(--primary-glow);
-}
-
-.btnNeon:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px var(--primary-glow);
-}
-
-.btnNeon.danger {
-    background: linear-gradient(135deg, var(--danger), #f87171);
-    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
-}
-
-.btnNeon.danger:hover {
-    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.5);
-}
-
-.btnGhost {
-    padding: 12px 24px;
-    background: transparent;
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    color: var(--text-muted);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.btnGhost:hover {
-    background: var(--bg-elevated);
-    color: var(--text-main);
-    border-color: var(--text-dim);
-}
-
-/* ===== Alerts ===== */
-.alertToast {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
-    border-radius: 14px;
-    margin-bottom: 20px;
-    animation: slideIn 0.4s ease;
-}
-
-.alertToast.success { border-left: 3px solid var(--success); }
-.alertToast.success .icon { color: var(--success); }
-.alertToast.error { border-left: 3px solid var(--danger); }
-.alertToast.error .icon { color: var(--danger); }
-
-.alertToast .text {
-    flex: 1;
-    color: var(--text-main);
-    font-size: 14px;
-}
-
-.closeAlert {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    padding: 4px;
-    transition: var(--transition);
-}
-
-.closeAlert:hover { color: var(--text-main); }
-
-/* ===== Glass Card ===== */
-.glassCard {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    animation: fadeSlideUp 0.6s ease 0.1s both;
-}
-
-.tableHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border-subtle);
-}
-
-.searchBox {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
-    border-radius: 10px;
-    transition: var(--transition);
-}
-
-.searchBox:focus-within {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-glow);
-}
-
-.searchBox i { color: var(--text-muted); }
-
-.searchBox input {
-    background: none;
-    border: none;
-    color: var(--text-main);
-    font-size: 14px;
-    width: 200px;
-    outline: none;
-}
-
-.recordCount {
-    font-size: 13px;
-    color: var(--text-muted);
-    background: var(--bg-elevated);
-    padding: 6px 12px;
-    border-radius: 20px;
-}
-
-/* ===== Neon Table ===== */
-.neonTable {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.neonTable thead { background: var(--bg-elevated); }
-
-.neonTable th {
-    padding: 16px 24px;
-    text-align: left;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
+.type-active {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
-.neonTable th i { margin-right: 8px; opacity: 0.6; }
-
-.neonTable td {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border-subtle);
-    color: var(--text-main);
-    font-size: 14px;
+.type-active.yes {
+    color: #4ade80;
+    background: rgba(34,197,94,.12);
 }
 
-.neonTable tbody tr { transition: var(--transition); }
-.neonTable tbody tr:hover { background: rgba(99, 102, 241, 0.04); }
-.neonTable tbody tr:last-child td { border-bottom: none; }
+.type-active.no {
+    color: #f87171;
+    background: rgba(239,68,68,.12);
+}
 
-.idCell {
-    font-family: 'JetBrains Mono', monospace;
+.type-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.type-meta div {
+    background: #151515;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.type-meta small {
+    display: block;
     color: var(--text-muted);
-    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 10px;
 }
 
-.typeName {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 600;
+.type-meta strong {
+    display: block;
+    margin-top: 4px;
 }
 
-.typeIcon {
-    width: 36px;
-    height: 36px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent);
-    font-size: 14px;
+.type-description {
+    color: var(--text-muted);
+    line-height: 1.5;
+    min-height: 42px;
 }
 
-/* ===== Badges ===== */
-.badgeNeon {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.badgeNeon .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-.badgeNeon.active {
-    background: rgba(16, 185, 129, 0.15);
-    color: var(--success);
-}
-
-/* ===== Badges (continued) ===== */
-.badgeNeon.active .dot {
-    background: var(--success);
-    box-shadow: 0 0 8px var(--success);
-}
-
-.badgeNeon.inactive {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--danger);
-}
-
-.badgeNeon.inactive .dot {
-    background: var(--danger);
-}
-
-/* ===== Action Buttons ===== */
-.actionButtons {
-    display: flex;
-    gap: 8px;
-}
-
-.btnIcon {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: var(--transition);
-    font-size: 14px;
-}
-
-.btnIcon.edit {
-    background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
-}
-
-.btnIcon.edit:hover {
-    background: rgba(245, 158, 11, 0.25);
-    transform: scale(1.1);
-}
-
-.btnIcon.delete {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--danger);
-}
-
-.btnIcon.delete:hover {
-    background: rgba(239, 68, 68, 0.25);
-    transform: scale(1.1);
-}
-
-/* ===== Empty State ===== */
-.emptyState {
-    padding: 60px 20px;
-    text-align: center;
-}
-
-.emptyState i {
-    font-size: 48px;
+.type-description.muted {
     color: var(--text-dim);
-    margin-bottom: 16px;
 }
 
-.emptyState h3 {
-    font-size: 18px;
-    color: var(--text-main);
-    margin: 0 0 8px;
+.type-actions {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 }
 
-.emptyState p {
-    font-size: 14px;
+.type-btn {
+    padding: 11px;
+    border-radius: 10px;
+    background: #1b1b1b;
+    border: 1px solid var(--border);
+    color: white;
+    font-weight: 900;
+}
+
+.type-btn.danger {
+    background: rgba(239,68,68,.12);
+    color: #f87171;
+    border-color: rgba(239,68,68,.35);
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    padding: 60px;
+    text-align: center;
     color: var(--text-muted);
-    margin: 0;
 }
 
-/* ===== Modal ===== */
-.modalOverlay {
+.empty-state i {
+    color: var(--primary);
+    font-size: 44px;
+    margin-bottom: 14px;
+}
+
+.modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0,0,0,.78);
     backdrop-filter: blur(8px);
+    z-index: 9999;
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
     padding: 20px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
-.modalOverlay.active {
+.modal-backdrop.active {
     display: flex;
-    opacity: 1;
 }
 
-.modalContent {
+.modal-card {
     width: 100%;
-    max-width: 480px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 24px;
-    padding: 32px;
-    position: relative;
-    overflow: hidden;
-    transform: scale(0.9) translateY(20px);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 720px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #111;
+    border: 2px solid var(--border);
+    border-radius: 22px;
+    padding: 24px;
 }
 
-.modalOverlay.active .modalContent {
-    transform: scale(1) translateY(0);
+.modal-card.small {
+    max-width: 460px;
 }
 
-.modalGlow {
-    position: absolute;
-    top: -100px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 200px;
-    height: 200px;
-    background: var(--primary);
-    filter: blur(100px);
-    opacity: 0.3;
-    pointer-events: none;
-}
-
-.modalGlow.danger {
-    background: var(--danger);
-}
-
-.modalHeader {
+.modal-header {
     display: flex;
     justify-content: space-between;
+    gap: 16px;
     align-items: center;
-    margin-bottom: 28px;
-    position: relative;
+    margin-bottom: 20px;
 }
 
-.modalTitle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.modalTitle i {
+.modal-header h2 {
     font-size: 24px;
-    color: var(--primary);
+    font-weight: 900;
 }
 
-.modalTitle h2 {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-main);
-    margin: 0;
+.modal-header button {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: rgba(239,68,68,.12);
+    color: #f87171;
+    font-size: 24px;
 }
 
-.modalClose {
-    width: 36px;
-    height: 36px;
+.modal-actions {
+    margin-top: 22px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
-    border-radius: 10px;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.modalClose:hover {
-    background: var(--danger);
-    border-color: var(--danger);
-    color: white;
-}
-
-/* ===== Form ===== */
-.inputGroup {
-    margin-bottom: 24px;
-}
-
-.inputGroup label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-}
-
-.inputWrapper {
-    position: relative;
-}
-
-.inputWrapper input {
-    width: 100%;
-    padding: 14px 16px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    color: var(--text-main);
-    font-size: 14px;
-    outline: none;
-    transition: var(--transition);
-}
-
-.inputWrapper input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-glow);
-}
-
-.inputWrapper input::placeholder {
-    color: var(--text-dim);
-}
-
-/* ===== Toggle ===== */
-.toggleGroup {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    margin-bottom: 28px;
-}
-
-.toggleInfo {
-    display: flex;
-    align-items: center;
+    justify-content: flex-end;
     gap: 12px;
 }
 
-.toggleInfo i {
-    font-size: 20px;
-    color: var(--primary);
+.danger-btn {
+    background: linear-gradient(135deg, #ef4444, #7f1d1d) !important;
 }
 
-.toggleLabel {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-main);
-}
-
-.toggleDesc {
-    display: block;
-    font-size: 12px;
+.delete-text {
     color: var(--text-muted);
-    margin-top: 2px;
-}
-
-.toggleSwitch {
-    position: relative;
-    width: 52px;
-    height: 28px;
-    cursor: pointer;
-}
-
-.toggleSwitch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.toggleSlider {
-    position: absolute;
-    inset: 0;
-    background: var(--bg-dark);
-    border: 1px solid var(--border-subtle);
-    border-radius: 28px;
-    transition: var(--transition);
-}
-
-.toggleSlider::before {
-    content: '';
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    left: 3px;
-    top: 3px;
-    background: var(--text-muted);
-    border-radius: 50%;
-    transition: var(--transition);
-}
-
-.toggleSwitch input:checked + .toggleSlider {
-    background: var(--primary);
-    border-color: var(--primary);
-}
-
-.toggleSwitch input:checked + .toggleSlider::before {
-    transform: translateX(24px);
-    background: white;
-}
-
-/* ===== Delete Confirm Text ===== */
-.deleteConfirmText {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-bottom: 24px;
     line-height: 1.6;
 }
 
-.deleteConfirmText strong {
-    color: var(--danger);
-    font-weight: 600;
+.delete-text strong {
+    color: white;
 }
 
-/* ===== Modal Footer ===== */
-.modalFooter {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
+@media(max-width: 1200px) {
+    .types-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .form-card {
+        position: static;
+    }
 }
 
-.modalFooter .btnNeon {
-    flex: 1;
-    justify-content: center;
+@media(max-width: 800px) {
+    .types-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
-/* ===== Animations ===== */
-@keyframes fadeSlideDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+@media(max-width: 560px) {
+    .type-actions,
+    .modal-actions {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
 
-@keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateX(-20px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    .modal-actions .btn {
+        width: 100%;
+    }
 }
 </style>
 
 <script>
-function openRoomTypeModal() {
-    const modal = document.getElementById('roomTypeModal');
-    const input = modal.querySelector('input[name="name"]');
-    
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('active'), 10);
-    setTimeout(() => input.focus(), 400);
-}
+const hotelRoomTypeBaseUrl = "{{ url('/hotels/' . $hotel->id . '/room-types') }}";
 
-function closeRoomTypeModal() {
-    const modal = document.getElementById('roomTypeModal');
-    modal.classList.remove('active');
-    setTimeout(() => modal.style.display = 'none', 300);
-}
+function openEditModal(id, name, code, defaultPax, colour, description, isActive) {
+    document.getElementById('edit_name').value = name ?? '';
+    document.getElementById('edit_code').value = code ?? '';
+    document.getElementById('edit_default_pax').value = defaultPax ?? 2;
+    document.getElementById('edit_colour').value = colour ?? '';
+    document.getElementById('edit_description').value = description ?? '';
+    document.getElementById('edit_is_active').checked = isActive == 1;
 
-function openEditModal(id, name, isActive) {
-    const modal = document.getElementById('editRoomTypeModal');
-    const nameInput = document.getElementById('edit_name');
-    const activeInput = document.getElementById('edit_is_active');
-    const form = document.getElementById('editRoomTypeForm');
-    
-    nameInput.value = name;
-    activeInput.checked = isActive == 1;
-    form.action = `/admin/room-types/${id}/update`;
-    
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('active'), 10);
-    setTimeout(() => nameInput.focus(), 400);
+    document.getElementById('editForm').action = `${hotelRoomTypeBaseUrl}/${id}`;
+    document.getElementById('editModal').classList.add('active');
 }
 
 function closeEditModal() {
-    const modal = document.getElementById('editRoomTypeModal');
-    modal.classList.remove('active');
-    setTimeout(() => modal.style.display = 'none', 300);
+    document.getElementById('editModal').classList.remove('active');
 }
 
 function openDeleteModal(id, name) {
-    const modal = document.getElementById('deleteRoomTypeModal');
-    const nameSpan = document.getElementById('deleteRoomTypeName');
-    const form = document.getElementById('deleteRoomTypeForm');
-    
-    nameSpan.textContent = name;
-    form.action = `/admin/room-types/${id}/delete`;
-    
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('active'), 10);
+    document.getElementById('deleteTypeName').textContent = name;
+    document.getElementById('deleteForm').action = `${hotelRoomTypeBaseUrl}/${id}`;
+    document.getElementById('deleteModal').classList.add('active');
 }
 
 function closeDeleteModal() {
-    const modal = document.getElementById('deleteRoomTypeModal');
-    modal.classList.remove('active');
-    setTimeout(() => modal.style.display = 'none', 300);
+    document.getElementById('deleteModal').classList.remove('active');
 }
 
-// Close modal when clicking outside
-document.querySelectorAll('.modalOverlay').forEach(modal => {
+document.querySelectorAll('.modal-backdrop').forEach(modal => {
     modal.addEventListener('click', function(e) {
         if (e.target === this) {
             this.classList.remove('active');
-            setTimeout(() => this.style.display = 'none', 300);
         }
     });
 });
 
-// Close alert toasts
-document.querySelectorAll('.closeAlert').forEach(btn => {
-    btn.addEventListener('click', function() {
-        this.parentElement.style.display = 'none';
+document.getElementById('typeSearch')?.addEventListener('input', function () {
+    const value = this.value.toLowerCase();
+
+    document.querySelectorAll('.type-card').forEach(card => {
+        card.style.display = card.dataset.search.includes(value) ? '' : 'none';
     });
 });
-
-// Auto-hide alerts after 5 seconds
-setTimeout(() => {
-    document.querySelectorAll('.alertToast').forEach(alert => {
-        alert.style.opacity = '0';
-        alert.style.transform = 'translateX(20px)';
-        setTimeout(() => alert.style.display = 'none', 300);
-    });
-}, 5000);
-
-// Re-open modal if validation errors exist
-@if($errors->any())
-    openRoomTypeModal();
-@endif
 </script>
-
-
-
 @endsection

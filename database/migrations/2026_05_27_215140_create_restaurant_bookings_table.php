@@ -12,58 +12,58 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('restaurant_bookings', function (Blueprint $table) {
-            $table->id();
+    $table->id();
 
-            $table->enum('booking_type', [
-                'afternoon_tea',
-                'dinner',
-            ]);
+    $table->foreignId('restaurant_id')
+        ->constrained()
+        ->cascadeOnDelete();
 
-            $table->foreignId('restaurant_table_id')
-                ->nullable()
-                ->constrained('restaurant_tables')
-                ->nullOnDelete();
+    $table->enum('booking_type', [
+        'afternoon_tea',
+        'dinner',
+    ]);
 
-            $table->string('guest_name');
+    $table->foreignId('restaurant_table_id')
+        ->nullable()
+        ->constrained('restaurant_tables')
+        ->nullOnDelete();
 
-            $table->string('guest_phone')
-                ->nullable();
+    $table->string('guest_name');
+    $table->string('guest_phone')->nullable();
+    $table->string('guest_email')->nullable();
 
-            $table->string('guest_email')
-                ->nullable();
+    $table->date('booking_date');
+    $table->time('slot_start_time');
+    $table->time('slot_end_time');
 
-            $table->date('booking_date');
+    $table->string('voucher_code')->nullable();
+    $table->decimal('voucher_amount', 8, 2)->nullable();
+    $table->text('voucher_note')->nullable();
 
-            $table->time('slot_start_time');
+    $table->integer('pax');
 
-            $table->time('slot_end_time');
-            $table->string('voucher_code')->nullable();
-            $table->decimal('voucher_amount', 8, 2)->nullable();
-            $table->text('voucher_note')->nullable();
+    $table->boolean('is_overbooking')->default(false);
 
-            $table->integer('pax');
+    $table->enum('status', [
+        'confirmed',
+        'seated',
+        'completed',
+        'cancelled',
+        'no_show',
+    ])->default('confirmed');
 
-            $table->boolean('is_overbooking')
-                ->default(false);
+    $table->text('special_request')->nullable();
 
-            $table->enum('status', [
-                'confirmed',
-                'seated',
-                'completed',
-                'cancelled',
-                'no_show',
-            ])->default('confirmed');
+    $table->foreignId('created_by')
+        ->nullable()
+        ->constrained('users')
+        ->nullOnDelete();
 
-            $table->text('special_request')
-                ->nullable();
+    $table->timestamps();
 
-            $table->foreignId('created_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
-            $table->timestamps();
-        });
+    $table->index(['restaurant_id', 'booking_date']);
+    $table->index(['restaurant_id', 'booking_type']);
+});
     }
 
     /**

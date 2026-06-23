@@ -13,16 +13,24 @@ use Illuminate\Support\Facades\Log;
 
 class RoomAllocationController extends Controller
 {
+    private function hotelId(): int
+    {
+        return (int) auth()->user()->hotel_id;
+    }
+
     public function index(Request $request)
     {
         $date = $request->date ?? now()->toDateString();
+        $hotelId = $this->hotelId();
 
-        $allocatedRoomStatusIds = HousekeepingRoomAllocation::where('allocation_date', $date)
+        $allocatedRoomStatusIds = HousekeepingRoomAllocation::where('hotel_id', $hotelId)
+            ->whereDate('allocation_date', $date)
             ->pluck('room_status_update_id')
             ->toArray();
 
         $availableRooms = RoomStatusUpdate::with('room.roomType')
-            ->where('status_date', $date)
+            ->where('hotel_id', $hotelId)
+            ->whereDate('status_date', $date)
             ->whereIn('status', [
                 'departure',
                 'stay',
@@ -35,7 +43,8 @@ class RoomAllocationController extends Controller
 
         $availableRoomsByStatus = $availableRooms->groupBy('status');
 
-        $staff = User::whereHas('rotaShifts', function ($q) use ($date) {
+        $staff = User::where('hotel_id', $hotelId)
+            ->whereHas('rotaShifts', function ($q) use ($date) {
                 $q->whereDate('shift_date', $date)
                     ->where('status', 'published')
                     ->whereNotIn('shift_type', [
@@ -60,7 +69,8 @@ class RoomAllocationController extends Controller
                 'assignedTo',
                 'roomStatusUpdate',
             ])
-            ->where('allocation_date', $date)
+            ->where('hotel_id', $hotelId)
+            ->whereDate('allocation_date', $date)
             ->get()
             ->groupBy('assigned_to');
 
@@ -75,6 +85,8 @@ class RoomAllocationController extends Controller
 
     public function assign(Request $request)
     {
+        $hotelId = $this->hotelId();
+
         $request->validate([
             'assigned_to' => 'required|exists:users,id',
             'allocation_date' => 'required|date',
@@ -82,26 +94,34 @@ class RoomAllocationController extends Controller
             'room_status_update_ids.*' => 'exists:room_status_updates,id',
         ]);
 
-        $assignedUser = User::findOrFail($request->assigned_to);
+        $assignedUser = User::where('hotel_id', $hotelId)
+            ->where('id', $request->assigned_to)
+            ->firstOrFail();
+
         $roomNumbers = [];
 
         foreach ($request->room_status_update_ids as $roomStatusId) {
-            $roomStatus = RoomStatusUpdate::with('room')->findOrFail($roomStatusId);
+            $roomStatus = RoomStatusUpdate::with('room')
+                ->where('hotel_id', $hotelId)
+                ->where('id', $roomStatusId)
+                ->firstOrFail();
 
             HousekeepingRoomAllocation::updateOrCreate(
                 [
+                    'hotel_id' => $hotelId,
                     'room_status_update_id' => $roomStatus->id,
                     'allocation_date' => $request->allocation_date,
                 ],
                 [
                     'room_id' => $roomStatus->room_id,
-                    'assigned_to' => $request->assigned_to,
+                    'assigned_to' => $assignedUser->id,
                     'assigned_by' => auth()->id(),
                     'cleaning_status' => 'assigned',
+                    'estimated_minutes' => $this->estimatedMinutes($roomStatus->status),
                 ]
             );
 
-            $roomNumbers[] = $roomStatus->room?->room_number ?? $roomStatus->room?->number ?? 'Room';
+            $roomNumbers[] = $roomStatus->room?->room_number ?? 'Room';
         }
 
         $this->sendPushToUser(
@@ -122,10 +142,14 @@ class RoomAllocationController extends Controller
 
     public function remove(HousekeepingRoomAllocation $allocation)
     {
+        if ((int) $allocation->hotel_id !== $this->hotelId()) {
+            abort(403);
+        }
+
         $allocation->load(['assignedTo', 'room']);
 
         $assignedUser = $allocation->assignedTo;
-        $roomNumber = $allocation->room?->room_number ?? $allocation->room?->number ?? 'Room';
+        $roomNumber = $allocation->room?->room_number ?? 'Room';
 
         $allocation->delete();
 
@@ -147,6 +171,8 @@ class RoomAllocationController extends Controller
 
     public function addExtraStaff(Request $request)
     {
+        $hotelId = $this->hotelId();
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'shift_date' => 'required|date',
@@ -155,7 +181,10 @@ class RoomAllocationController extends Controller
             'end_time' => 'nullable|date_format:H:i',
         ]);
 
-        $user = User::with('department')->findOrFail($request->user_id);
+        $user = User::with('department')
+            ->where('hotel_id', $hotelId)
+            ->where('id', $request->user_id)
+            ->firstOrFail();
 
         RotaShift::updateOrCreate(
             [
@@ -163,6 +192,7 @@ class RoomAllocationController extends Controller
                 'shift_date' => $request->shift_date,
             ],
             [
+                'hotel_id' => $hotelId,
                 'department_id' => $user->department_id,
                 'shift_type' => $request->shift_type,
                 'start_time' => $request->start_time,
@@ -190,6 +220,12 @@ class RoomAllocationController extends Controller
 
     public function markUnavailable(Request $request, RotaShift $rotaShift)
     {
+        $hotelId = $this->hotelId();
+
+        if ((int) $rotaShift->hotel_id !== $hotelId) {
+            abort(403);
+        }
+
         $request->validate([
             'shift_type' => 'required|in:sick,day_off,holiday',
         ]);
@@ -220,46 +256,60 @@ class RoomAllocationController extends Controller
 
     public function autoAllocate(Request $request)
     {
+        $hotelId = $this->hotelId();
+
         $request->validate([
             'allocation_date' => 'required|date',
         ]);
 
         $date = $request->allocation_date;
 
-        $staff = User::whereHas('rotaShifts', function ($q) use ($date) {
-            $q->whereDate('shift_date', $date)
-                ->where('status', 'published')
-                ->whereNotIn('shift_type', ['day_off', 'holiday', 'sick']);
-        })
-        ->whereHas('department', function ($q) {
-            $q->whereRaw('LOWER(name) IN (?, ?, ?)', [
-                'housekeeping',
-                'house keeping',
-                'hk',
-            ]);
-        })
-        ->whereHas('role', function ($q) {
-            $q->whereRaw('LOWER(name) NOT IN (?, ?, ?)', [
-                'supervisor',
-                'housekeeping supervisor',
-                'hk supervisor',
-            ]);
-        })
-        ->where('status', 'active')
-        ->orderBy('name')
-        ->get();
+        $staff = User::where('hotel_id', $hotelId)
+            ->whereHas('rotaShifts', function ($q) use ($date) {
+                $q->whereDate('shift_date', $date)
+                    ->where('status', 'published')
+                    ->whereNotIn('shift_type', [
+                        'day_off',
+                        'holiday',
+                        'sick',
+                    ]);
+            })
+            ->whereHas('department', function ($q) {
+                $q->whereRaw('LOWER(name) IN (?, ?, ?)', [
+                    'housekeeping',
+                    'house keeping',
+                    'hk',
+                ]);
+            })
+            ->whereHas('role', function ($q) {
+                $q->whereRaw('LOWER(name) NOT IN (?, ?, ?)', [
+                    'supervisor',
+                    'housekeeping supervisor',
+                    'hk supervisor',
+                ]);
+            })
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
 
         if ($staff->count() === 0) {
             return back()->with('error', 'No housekeeping staff working on this date.');
         }
 
-        $allocatedIds = HousekeepingRoomAllocation::where('allocation_date', $date)
+        $allocatedIds = HousekeepingRoomAllocation::where('hotel_id', $hotelId)
+            ->whereDate('allocation_date', $date)
             ->pluck('room_status_update_id')
             ->toArray();
 
         $rooms = RoomStatusUpdate::with('room')
-            ->where('status_date', $date)
-            ->whereIn('status', ['departure', 'stay', 'carry_forward', 'room_move'])
+            ->where('hotel_id', $hotelId)
+            ->whereDate('status_date', $date)
+            ->whereIn('status', [
+                'departure',
+                'stay',
+                'carry_forward',
+                'room_move',
+            ])
             ->whereNotIn('id', $allocatedIds)
             ->get();
 
@@ -277,14 +327,12 @@ class RoomAllocationController extends Controller
             ];
         }
 
-        $rooms = $rooms->sortByDesc(function ($room) {
-            return in_array($room->status, ['departure', 'carry_forward', 'room_move']) ? 30 : 15;
+        $rooms = $rooms->sortByDesc(function ($roomStatus) {
+            return $this->estimatedMinutes($roomStatus->status);
         });
 
         foreach ($rooms as $roomStatus) {
-            $estimatedMinutes = in_array($roomStatus->status, ['departure', 'carry_forward', 'room_move'])
-                ? 30
-                : 15;
+            $estimatedMinutes = $this->estimatedMinutes($roomStatus->status);
 
             uasort($staffWorkload, function ($a, $b) {
                 return $a['minutes'] <=> $b['minutes'];
@@ -293,6 +341,7 @@ class RoomAllocationController extends Controller
             $selectedStaffId = array_key_first($staffWorkload);
 
             HousekeepingRoomAllocation::create([
+                'hotel_id' => $hotelId,
                 'room_status_update_id' => $roomStatus->id,
                 'room_id' => $roomStatus->room_id,
                 'assigned_to' => $selectedStaffId,
@@ -306,7 +355,7 @@ class RoomAllocationController extends Controller
             $staffWorkload[$selectedStaffId]['rooms']++;
         }
 
-        foreach ($staffWorkload as $staffId => $workload) {
+        foreach ($staffWorkload as $workload) {
             if ($workload['rooms'] <= 0) {
                 continue;
             }
@@ -325,9 +374,18 @@ class RoomAllocationController extends Controller
             );
         }
 
-        logActivity('Generated Auto Allocation', 'Housekeeping', 'Rooms auto allocated for today');
+        logActivity('Generated Auto Allocation', 'Housekeeping', 'Rooms auto allocated for ' . $date);
 
         return back()->with('success', 'Rooms auto allocated successfully.');
+    }
+
+    private function estimatedMinutes(string $status): int
+    {
+        return in_array($status, [
+            'departure',
+            'carry_forward',
+            'room_move',
+        ]) ? 30 : 15;
     }
 
     private function sendPushToUser(?User $user, string $title, string $body, array $data = []): bool

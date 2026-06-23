@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\InventoryItem;
 use App\Models\InventoryTransaction;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class KitchenInventoryController extends Controller
 {
@@ -12,7 +13,8 @@ class KitchenInventoryController extends Controller
     {
         $user = auth()->user();
 
-        $items = InventoryItem::where('department_id', $user->department_id)
+        $items = InventoryItem::where('hotel_id', $user->hotel_id)
+            ->where('department_id', $user->department_id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -29,6 +31,8 @@ class KitchenInventoryController extends Controller
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+
         $request->validate([
             'name' => 'required|string|max:255',
             'category' => 'nullable|string|max:255',
@@ -38,7 +42,8 @@ class KitchenInventoryController extends Controller
         ]);
 
         InventoryItem::create([
-            'department_id' => auth()->user()->department_id,
+            'hotel_id' => $user->hotel_id,
+            'department_id' => $user->department_id,
             'name' => $request->name,
             'category' => $request->category,
             'quantity' => $request->quantity,
@@ -52,26 +57,24 @@ class KitchenInventoryController extends Controller
 
     public function stockUpdate(Request $request, InventoryItem $item)
     {
+        $this->checkAccess($item);
+
         $request->validate([
             'type' => 'required|in:stock_in,stock_out,adjustment',
             'quantity' => 'required|numeric|min:0.01',
             'note' => 'nullable|string|max:1000',
         ]);
 
-        if ($item->department_id !== auth()->user()->department_id) {
-            abort(403);
-        }
-
         if ($request->type === 'stock_in') {
             $item->quantity += $request->quantity;
         }
 
         if ($request->type === 'stock_out') {
-            $item->quantity -= $request->quantity;
-
-            if ($item->quantity < 0) {
-                $item->quantity = 0;
+            if ($item->quantity < $request->quantity) {
+                return back()->with('error', 'Not enough stock available.');
             }
+
+            $item->quantity -= $request->quantity;
         }
 
         if ($request->type === 'adjustment') {
@@ -81,6 +84,7 @@ class KitchenInventoryController extends Controller
         $item->save();
 
         InventoryTransaction::create([
+            'hotel_id' => $item->hotel_id,
             'inventory_item_id' => $item->id,
             'user_id' => auth()->id(),
             'type' => $request->type,
@@ -91,11 +95,32 @@ class KitchenInventoryController extends Controller
         return back()->with('success', 'Stock updated successfully.');
     }
 
+    public function update(Request $request, InventoryItem $item)
+    {
+        $this->checkAccess($item);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:255',
+            'quantity' => 'required|numeric|min:0',
+            'unit' => 'required|string|max:50',
+            'minimum_stock' => 'required|numeric|min:0',
+        ]);
+
+        $item->update([
+            'name' => $request->name,
+            'category' => $request->category,
+            'quantity' => $request->quantity,
+            'unit' => $request->unit,
+            'minimum_stock' => $request->minimum_stock,
+        ]);
+
+        return back()->with('success', 'Inventory item updated successfully.');
+    }
+
     public function destroy(InventoryItem $item)
     {
-        if ($item->department_id !== auth()->user()->department_id) {
-            abort(403);
-        }
+        $this->checkAccess($item);
 
         $item->update([
             'is_active' => false,
@@ -104,117 +129,106 @@ class KitchenInventoryController extends Controller
         return back()->with('success', 'Inventory item removed successfully.');
     }
 
-
     public function currentInventory()
-{
-    $items = InventoryItem::where('department_id', auth()->user()->department_id)
-        ->where('is_active', true)
-        ->orderBy('name')
-        ->get();
+    {
+        $user = auth()->user();
 
-    return view('dashboard.kitchen-supervisor.inventory.current', compact('items'));
-}
+        $items = InventoryItem::where('hotel_id', $user->hotel_id)
+            ->where('department_id', $user->department_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-public function update(Request $request, InventoryItem $item)
-{
-    if ($item->department_id !== auth()->user()->department_id) {
-        abort(403);
+        return view('dashboard.kitchen-supervisor.inventory.current', compact('items'));
     }
 
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'category' => 'nullable|string|max:255',
-        'quantity' => 'required|numeric|min:0',
-        'unit' => 'required|string|max:50',
-        'minimum_stock' => 'required|numeric|min:0',
-    ]);
+    public function history(Request $request)
+    {
+        $user = auth()->user();
 
-    $item->update([
-        'name' => $request->name,
-        'category' => $request->category,
-        'quantity' => $request->quantity,
-        'unit' => $request->unit,
-        'minimum_stock' => $request->minimum_stock,
-    ]);
+        $query = InventoryTransaction::with(['item', 'user'])
+            ->where('hotel_id', $user->hotel_id)
+            ->whereHas('item', function ($q) use ($user) {
+                $q->where('hotel_id', $user->hotel_id)
+                    ->where('department_id', $user->department_id);
+            });
 
-    return back()->with('success', 'Inventory item updated successfully.');
-}
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
 
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
 
+        if ($request->filled('item_id')) {
+            $query->where('inventory_item_id', $request->item_id);
+        }
 
-//kitchen history page
-public function history(Request $request)
-{
-    $user = auth()->user();
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
 
-    $query = InventoryTransaction::with(['item', 'user'])
-        ->whereHas('item', function ($q) use ($user) {
-            $q->where('department_id', $user->department_id);
-        });
+        $transactions = $query->latest()->get();
 
-    if ($request->filled('from_date')) {
-        $query->whereDate('created_at', '>=', $request->from_date);
+        $items = InventoryItem::where('hotel_id', $user->hotel_id)
+            ->where('department_id', $user->department_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('dashboard.kitchen-supervisor.inventory.history', compact(
+            'transactions',
+            'items'
+        ));
     }
 
-    if ($request->filled('to_date')) {
-        $query->whereDate('created_at', '<=', $request->to_date);
+    public function historyPdf(Request $request)
+    {
+        $user = auth()->user();
+
+        $query = InventoryTransaction::with(['item', 'user'])
+            ->where('hotel_id', $user->hotel_id)
+            ->whereHas('item', function ($q) use ($user) {
+                $q->where('hotel_id', $user->hotel_id)
+                    ->where('department_id', $user->department_id);
+            });
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        if ($request->filled('item_id')) {
+            $query->where('inventory_item_id', $request->item_id);
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $transactions = $query->latest()->get();
+
+        $pdf = Pdf::loadView(
+            'dashboard.kitchen-supervisor.inventory.history-pdf',
+            compact('transactions')
+        )->setPaper('a4', 'landscape');
+
+        return $pdf->download('inventory-history-report.pdf');
     }
 
-    if ($request->filled('item_id')) {
-        $query->where('inventory_item_id', $request->item_id);
+    private function checkAccess(InventoryItem $item): void
+    {
+        $user = auth()->user();
+
+        if (
+            (int) $item->hotel_id !== (int) $user->hotel_id ||
+            (int) $item->department_id !== (int) $user->department_id
+        ) {
+            abort(403, 'You are not allowed to access this inventory item.');
+        }
     }
-
-    if ($request->filled('type')) {
-        $query->where('type', $request->type);
-    }
-
-    $transactions = $query->latest()->get();
-
-    $items = InventoryItem::where('department_id', $user->department_id)
-        ->where('is_active', true)
-        ->orderBy('name')
-        ->get();
-
-    return view('dashboard.kitchen-supervisor.inventory.history', compact(
-        'transactions',
-        'items'
-    ));
-}
-
-//pdf inventry history
-
-public function historyPdf(Request $request)
-{
-    $user = auth()->user();
-
-    $query = InventoryTransaction::with(['item', 'user'])
-        ->whereHas('item', function ($q) use ($user) {
-            $q->where('department_id', $user->department_id);
-        });
-
-    if ($request->filled('from_date')) {
-        $query->whereDate('created_at', '>=', $request->from_date);
-    }
-
-    if ($request->filled('to_date')) {
-        $query->whereDate('created_at', '<=', $request->to_date);
-    }
-
-    if ($request->filled('item_id')) {
-        $query->where('inventory_item_id', $request->item_id);
-    }
-
-    if ($request->filled('type')) {
-        $query->where('type', $request->type);
-    }
-
-    $transactions = $query->latest()->get();
-
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
-        'dashboard.kitchen-supervisor.inventory.history-pdf',
-        compact('transactions')
-    )->setPaper('a4', 'landscape');
-
-    return $pdf->download('inventory-history-report.pdf');
-}
 }

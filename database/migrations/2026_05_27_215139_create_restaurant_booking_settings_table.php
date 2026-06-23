@@ -12,30 +12,32 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('restaurant_booking_settings', function (Blueprint $table) {
-            $table->id();
+    $table->id();
 
-            $table->enum('booking_type', [
-                'afternoon_tea',
-                'dinner',
-            ]);
+    $table->foreignId('restaurant_id')
+        ->constrained()
+        ->cascadeOnDelete();
 
-            $table->time('opening_time');
+    $table->enum('booking_type', [
+        'afternoon_tea',
+        'dinner',
+    ]);
 
-            $table->time('closing_time');
+    $table->time('opening_time');
+    $table->time('closing_time');
 
-            $table->integer('slot_duration_minutes')
-                ->default(30);
+    $table->integer('slot_duration_minutes')->default(30);
+    $table->integer('slot_interval_minutes');
 
-            $table->integer('max_pax_per_slot');
+    $table->integer('max_pax_per_slot');
 
-            $table->boolean('allow_overbooking')
-                ->default(true);
+    $table->boolean('allow_overbooking')->default(true);
+    $table->boolean('is_active')->default(true);
 
-            $table->boolean('is_active')
-                ->default(true);
+    $table->timestamps();
 
-            $table->timestamps();
-        });
+    $table->unique(['restaurant_id', 'booking_type']);
+});
     }
 
     /**

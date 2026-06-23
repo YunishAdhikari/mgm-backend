@@ -8,13 +8,21 @@ use Illuminate\Http\Request;
 
 class HousekeepingInspectionController extends Controller
 {
+    private function hotelId(): int
+    {
+        return (int) auth()->user()->hotel_id;
+    }
+
     public function index()
     {
+        $hotelId = $this->hotelId();
+
         $rooms = HousekeepingRoomAllocation::with([
                 'room',
                 'assignedTo',
                 'roomStatusUpdate',
             ])
+            ->where('hotel_id', $hotelId)
             ->whereDate('allocation_date', today())
             ->where('cleaning_status', 'cleaned')
             ->orderBy('cleaned_at', 'asc')
@@ -25,6 +33,8 @@ class HousekeepingInspectionController extends Controller
 
     public function approve(HousekeepingRoomAllocation $allocation)
     {
+        $this->ensureAllocationBelongsToHotel($allocation);
+
         $allocation->update([
             'cleaning_status' => 'inspected',
             'inspected_at' => now(),
@@ -35,6 +45,8 @@ class HousekeepingInspectionController extends Controller
 
     public function reject(Request $request, HousekeepingRoomAllocation $allocation)
     {
+        $this->ensureAllocationBelongsToHotel($allocation);
+
         $request->validate([
             'reason' => 'required|string|max:1000',
         ]);
@@ -51,11 +63,14 @@ class HousekeepingInspectionController extends Controller
 
     public function staydnd()
     {
+        $hotelId = $this->hotelId();
+
         $rooms = HousekeepingRoomAllocation::with([
                 'room',
                 'assignedTo',
                 'roomStatusUpdate',
             ])
+            ->where('hotel_id', $hotelId)
             ->whereDate('allocation_date', today())
             ->whereIn('cleaning_status', [
                 'assigned',
@@ -82,10 +97,12 @@ class HousekeepingInspectionController extends Controller
         return view('dashboard.housekeeping.inspection.dnd', compact('rooms', 'stats'));
     }
 
-
     public function ooo()
     {
+        $hotelId = $this->hotelId();
+
         $rooms = RoomStatusUpdate::with('room')
+            ->where('hotel_id', $hotelId)
             ->whereDate('status_date', today())
             ->whereIn('status', ['OOO', 'OOI'])
             ->get()
@@ -104,12 +121,27 @@ class HousekeepingInspectionController extends Controller
     }
 
     public function inspectedRooms()
-{
-    $rooms = RoomStatusUpdate::with(['room', 'assignedUser', 'inspectedBy'])
-        ->where('status', 'inspected')
-        ->latest()
-        ->get();
+    {
+        $hotelId = $this->hotelId();
 
-    return view('dashboard.housekeeping.inspected-rooms', compact('rooms'));
-}
+        $rooms = HousekeepingRoomAllocation::with([
+                'room',
+                'assignedTo',
+                'assignedBy',
+                'roomStatusUpdate',
+            ])
+            ->where('hotel_id', $hotelId)
+            ->where('cleaning_status', 'inspected')
+            ->latest('inspected_at')
+            ->get();
+
+        return view('dashboard.housekeeping.inspected-rooms', compact('rooms'));
+    }
+
+    private function ensureAllocationBelongsToHotel(HousekeepingRoomAllocation $allocation): void
+    {
+        if ((int) $allocation->hotel_id !== $this->hotelId()) {
+            abort(403);
+        }
+    }
 }

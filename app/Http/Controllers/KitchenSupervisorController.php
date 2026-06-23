@@ -14,28 +14,46 @@ use Illuminate\Support\Facades\DB;
 
 class KitchenSupervisorController extends Controller
 {
-
-
     public function dashboard()
     {
-        $inventoryItems = InventoryItem::where('department_id', auth()->user()->department_id)->get();
+        $user = auth()->user();
+
+        $inventoryItems = InventoryItem::where('hotel_id', $user->hotel_id)
+            ->where('department_id', $user->department_id)
+            ->where('is_active', true)
+            ->get();
+
         $totalItems = $inventoryItems->count();
+
         $lowStockItems = $inventoryItems->filter(function ($item) {
             return $item->quantity <= $item->minimum_stock;
         });
+
         $lowStockCount = $lowStockItems->count();
 
-        // Get recipe stats
-        $totalRecipes = RecipeIngredient::count();
-        $totalBuffets = BuffetMenu::count();
+        $totalRecipes = RecipeIngredient::where('hotel_id', $user->hotel_id)
+            ->whereHas('menuItem', function ($q) use ($user) {
+                $q->where('hotel_id', $user->hotel_id)
+                    ->where('department_id', $user->department_id)
+                    ->where('is_active', true);
+            })
+            ->count();
 
-        // Get recent activity
-        $recentWastages = InventoryWastage::with('item', 'user')
-            ->orderBy('created_at', 'desc')
+        $totalBuffets = BuffetMenu::where('hotel_id', $user->hotel_id)
+            ->where('department_id', $user->department_id)
+            ->where('is_active', true)
+            ->count();
+
+        $recentWastages = InventoryWastage::with(['item', 'user'])
+            ->where('hotel_id', $user->hotel_id)
+            ->whereHas('item', function ($q) use ($user) {
+                $q->where('hotel_id', $user->hotel_id)
+                    ->where('department_id', $user->department_id);
+            })
+            ->latest()
             ->limit(5)
             ->get();
 
-        // Get low stock items for alert
         $lowStockAlerts = $lowStockItems->take(5);
 
         return view('dashboard.kitchen-supervisor.index', compact(
@@ -46,192 +64,189 @@ class KitchenSupervisorController extends Controller
             'recentWastages',
             'lowStockAlerts'
         ));
-        // return view('dashboard.kitchen-supervisor.index');
     }
 
+    public function index()
+    {
+        $user = auth()->user();
 
-public function index()
-{
-    $user = auth()->user();
+        $employees = User::with(['role', 'department'])
+            ->where('hotel_id', $user->hotel_id)
+            ->where('status', 'active')
+            ->where('department_id', $user->department_id)
+            ->orderBy('name')
+            ->get();
 
-    $employees = User::with(['role', 'department'])
-        ->where('status', 'active')
-        ->where('department_id', $user->department_id)
-        ->orderBy('name')
-        ->get();
+        $departments = Department::where('hotel_id', $user->hotel_id)
+            ->where('id', $user->department_id)
+            ->get();
 
-    $departments = Department::where('id', $user->department_id)->get();
+        $shifts = RotaShift::with(['user', 'department'])
+            ->where('department_id', $user->department_id)
+            ->whereHas('user', function ($q) use ($user) {
+                $q->where('hotel_id', $user->hotel_id);
+            })
+            ->orderBy('shift_date', 'desc')
+            ->orderBy('start_time')
+            ->get();
 
-    $shifts = RotaShift::with(['user', 'department'])
-        ->where('department_id', $user->department_id)
-        ->orderBy('shift_date', 'desc')
-        ->orderBy('start_time')
-        ->get();
+        return view('dashboard.kitchen-supervisor.rota.index', compact(
+            'employees',
+            'departments',
+            'shifts'
+        ));
+    }
 
-    return view('dashboard.kitchen-supervisor.rota.index', compact(
-        'employees',
-        'departments',
-        'shifts'
-    ));
-}
+    public function storeRota(Request $request)
+    {
+        $supervisor = auth()->user();
 
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'shift_date' => 'required|date',
+            'shift_type' => 'required|in:morning,evening,night,split,day_off,holiday,sick',
+            'start_time' => 'nullable',
+            'end_time' => 'nullable',
+            'notes' => 'nullable|string|max:1000',
+        ]);
 
-public function storeRota(Request $request)
-{
-    $supervisor = auth()->user();
+        $employee = User::where('id', $request->user_id)
+            ->where('hotel_id', $supervisor->hotel_id)
+            ->where('department_id', $supervisor->department_id)
+            ->firstOrFail();
 
-    $request->validate([
-        'user_id' => 'required',
-        'shift_date' => 'required|date',
-        'shift_type' => 'required',
-    ]);
+        RotaShift::updateOrCreate(
+            [
+                'user_id' => $employee->id,
+                'shift_date' => $request->shift_date,
+            ],
+            [
+                'department_id' => $supervisor->department_id,
+                'shift_type' => $request->shift_type,
+                'start_time' => in_array($request->shift_type, ['day_off', 'holiday', 'sick'])
+                    ? null
+                    : $request->start_time,
+                'end_time' => in_array($request->shift_type, ['day_off', 'holiday', 'sick'])
+                    ? null
+                    : $request->end_time,
+                'notes' => $request->notes,
+                'created_by' => $supervisor->id,
+            ]
+        );
 
-    RotaShift::create([
-        'user_id' => $request->user_id,
-        'department_id' => $supervisor->department_id,
-        'shift_date' => $request->shift_date,
-        'shift_type' => $request->shift_type,
-        'start_time' => $request->start_time,
-        'end_time' => $request->end_time,
-        'notes' => $request->notes,
-        'created_by' => $supervisor->id,
-    ]);
-
-    return back()->with('success', 'Shift added successfully.');
-}
+        return back()->with('success', 'Shift saved successfully.');
+    }
 
     public function destroy($id)
     {
-        $shift = RotaShift::findOrFail($id);
+        $user = auth()->user();
+
+        $shift = RotaShift::where('id', $id)
+            ->where('department_id', $user->department_id)
+            ->whereHas('user', function ($q) use ($user) {
+                $q->where('hotel_id', $user->hotel_id);
+            })
+            ->firstOrFail();
+
         $shift->delete();
 
         return back()->with('success', 'Shift deleted successfully.');
     }
-    
-
-
 
     public function view()
-{
-       $supervisor = auth()->user();
+    {
+        $supervisor = auth()->user();
 
-    $employees = User::where(
-        'department_id',
-        $supervisor->department_id
-    )->get();
+        $employees = User::where('hotel_id', $supervisor->hotel_id)
+            ->where('department_id', $supervisor->department_id)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
 
-    $weekStart = request('week_start')
-        ? \Carbon\Carbon::parse(request('week_start'))->startOfWeek()
-        : now()->startOfWeek();
+        $weekStart = request('week_start')
+            ? \Carbon\Carbon::parse(request('week_start'))->startOfWeek()
+            : now()->startOfWeek();
 
-    $weekDates = collect(range(0, 6))->map(function ($day) use ($weekStart) {
-        return $weekStart->copy()->addDays($day);
-    });
+        $weekDates = collect(range(0, 6))->map(function ($day) use ($weekStart) {
+            return $weekStart->copy()->addDays($day);
+        });
 
-    $rotas = RotaShift::whereBetween('shift_date', [
-        $weekStart->copy()->startOfDay(),
-        $weekStart->copy()->endOfWeek(),
-    ])->get();
+        $shifts = RotaShift::where('department_id', $supervisor->department_id)
+            ->whereHas('user', function ($q) use ($supervisor) {
+                $q->where('hotel_id', $supervisor->hotel_id);
+            })
+            ->whereBetween('shift_date', [
+                $weekStart->copy()->format('Y-m-d'),
+                $weekStart->copy()->addDays(6)->format('Y-m-d'),
+            ])
+            ->orderBy('start_time')
+            ->get();
 
- $shifts = RotaShift::where('department_id', $supervisor->department_id)
-    ->whereBetween('shift_date', [
-        $weekStart->copy()->format('Y-m-d'),
-        $weekStart->copy()->addDays(6)->format('Y-m-d'),
-    ])
-    ->orderBy('start_time')
-    ->get();
+        return view('dashboard.kitchen-supervisor.rota.view', compact(
+            'supervisor',
+            'employees',
+            'weekDates',
+            'weekStart',
+            'shifts'
+        ));
+    }
 
-return view('dashboard.kitchen-supervisor.rota.view', compact(
-    'supervisor',
-    'employees',
-    'weekDates',
-    'weekStart',
-    'shifts'
-));
-//     $supervisor = auth()->user();
+    public function aiPrepPlan(Request $request)
+    {
+        $user = auth()->user();
+        $date = $request->date ?? now()->toDateString();
 
-//     $employees = User::where(
-//         'department_id',
-//         $supervisor->department_id
-//     )->get();
+        $sales = DB::table('buffet_sales')
+            ->join('buffet_menus', 'buffet_sales.buffet_menu_id', '=', 'buffet_menus.id')
+            ->where('buffet_sales.hotel_id', $user->hotel_id)
+            ->where('buffet_menus.hotel_id', $user->hotel_id)
+            ->where('buffet_menus.department_id', $user->department_id)
+            ->whereDate('buffet_sales.sale_date', $date)
+            ->select(
+                'buffet_sales.id',
+                'buffet_sales.pax',
+                'buffet_sales.note',
+                'buffet_menus.id as buffet_menu_id',
+                'buffet_menus.name as buffet_name',
+                'buffet_menus.service_type'
+            )
+            ->get();
 
-//     $weekStart = request('week_start')
-//         ? \Carbon\Carbon::parse(request('week_start'))->startOfWeek()
-//         : now()->startOfWeek();
+        $totalPax = $sales->sum('pax');
 
-//     $weekDates = collect(range(0, 6))->map(function ($day) use ($weekStart) {
-//         return $weekStart->copy()->addDays($day);
-//     });
+        $ingredients = DB::table('buffet_sales')
+            ->join('buffet_menus', 'buffet_sales.buffet_menu_id', '=', 'buffet_menus.id')
+            ->join('buffet_menu_items', 'buffet_menus.id', '=', 'buffet_menu_items.buffet_menu_id')
+            ->join('menu_items', 'buffet_menu_items.menu_item_id', '=', 'menu_items.id')
+            ->join('recipe_ingredients', 'menu_items.id', '=', 'recipe_ingredients.menu_item_id')
+            ->join('inventory_items', 'recipe_ingredients.inventory_item_id', '=', 'inventory_items.id')
+            ->where('buffet_sales.hotel_id', $user->hotel_id)
+            ->where('buffet_menus.hotel_id', $user->hotel_id)
+            ->where('buffet_menus.department_id', $user->department_id)
+            ->where('buffet_menu_items.hotel_id', $user->hotel_id)
+            ->where('menu_items.hotel_id', $user->hotel_id)
+            ->where('recipe_ingredients.hotel_id', $user->hotel_id)
+            ->where('inventory_items.hotel_id', $user->hotel_id)
+            ->whereDate('buffet_sales.sale_date', $date)
+            ->select(
+                'inventory_items.name as ingredient_name',
+                DB::raw('SUM(recipe_ingredients.quantity * buffet_sales.pax) as total_required')
+            )
+            ->groupBy('inventory_items.name')
+            ->orderBy('inventory_items.name')
+            ->get();
 
-//     $rotas = RotaShift::whereBetween('shift_date', [
-//         $weekStart->copy()->startOfDay(),
-//         $weekStart->copy()->endOfWeek(),
-//     ])->get();
+        $allergyWarnings = $sales->filter(function ($sale) {
+            return $sale->note &&
+                preg_match('/allergy|nut|gluten|vegan|vegetarian|dairy|halal|pork/i', $sale->note);
+        });
 
-//  $shifts = RotaShift::where('department_id', $supervisor->department_id)
-//     ->whereBetween('shift_date', [
-//         $weekStart->copy()->format('Y-m-d'),
-//         $weekStart->copy()->addDays(6)->format('Y-m-d'),
-//     ])
-//     ->orderBy('start_time')
-//     ->get();
-
-// return view('dashboard.kitchen-supervisor.rota.view', compact(
-//     'supervisor',
-//     'employees',
-//     'weekDates',
-//     'weekStart',
-//     'shifts'
-// ));
-}
-
-
-
-public function aiPrepPlan(Request $request)
-{
-    $date = $request->date ?? now()->toDateString();
-
-    $sales = DB::table('buffet_sales')
-        ->join('buffet_menus', 'buffet_sales.buffet_menu_id', '=', 'buffet_menus.id')
-        ->whereDate('buffet_sales.sale_date', $date)
-        ->select(
-            'buffet_sales.id',
-            'buffet_sales.pax',
-            'buffet_sales.note',
-            'buffet_menus.id as buffet_menu_id',
-            'buffet_menus.name as buffet_name',
-            'buffet_menus.service_type'
-        )
-        ->get();
-
-    $totalPax = $sales->sum('pax');
-
-    $ingredients = DB::table('buffet_sales')
-        ->join('buffet_menus', 'buffet_sales.buffet_menu_id', '=', 'buffet_menus.id')
-        ->join('buffet_menu_items', 'buffet_menus.id', '=', 'buffet_menu_items.buffet_menu_id')
-        ->join('menu_items', 'buffet_menu_items.menu_item_id', '=', 'menu_items.id')
-        ->join('recipe_ingredients', 'menu_items.id', '=', 'recipe_ingredients.menu_item_id')
-        ->join('inventory_items', 'recipe_ingredients.inventory_item_id', '=', 'inventory_items.id')
-        ->whereDate('buffet_sales.sale_date', $date)
-        ->select(
-            'inventory_items.name as ingredient_name',
-            DB::raw('SUM(recipe_ingredients.quantity * buffet_sales.pax) as total_required')
-        )
-        ->groupBy('inventory_items.name')
-        ->orderBy('inventory_items.name')
-        ->get();
-
-    $allergyWarnings = $sales->filter(function ($sale) {
-        return $sale->note &&
-            preg_match('/allergy|nut|gluten|vegan|vegetarian|dairy|halal|pork/i', $sale->note);
-    });
-
-    return view('dashboard.kitchen-supervisor.ai-prep-plan', compact(
-        'date',
-        'sales',
-        'totalPax',
-        'ingredients',
-        'allergyWarnings'
-    ));
-}
+        return view('dashboard.kitchen-supervisor.ai-prep-plan', compact(
+            'date',
+            'sales',
+            'totalPax',
+            'ingredients',
+            'allergyWarnings'
+        ));
+    }
 }

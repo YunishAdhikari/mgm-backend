@@ -11,32 +11,112 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('complaints', function (Blueprint $table) {
-    $table->id();
+        Schema::create('complaints', function (Blueprint $table) {
 
-    $table->string('guest_name')->nullable();
-    $table->string('email')->nullable();
-    $table->string('phone')->nullable();
+            $table->id();
 
-    $table->string('room_number')->nullable();
+            /*
+            |--------------------------------------------------------------------------
+            | Hotel
+            |--------------------------------------------------------------------------
+            */
+            $table->foreignId('hotel_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-    $table->enum('type', ['complaint', 'feedback'])->default('complaint');
-    $table->string('category')->nullable();
+            /*
+            |--------------------------------------------------------------------------
+            | Guest Details
+            |--------------------------------------------------------------------------
+            */
+            $table->string('guest_name')->nullable();
 
-    $table->string('title');
-    $table->text('description');
+            $table->string('email')->nullable();
 
-    $table->string('image')->nullable();
+            $table->string('phone')->nullable();
 
-    $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
-    $table->enum('status', ['pending', 'in_progress', 'resolved', 'closed'])->default('pending');
+            $table->string('room_number')->nullable();
 
-    $table->foreignId('handled_by')->nullable()->constrained('users')->nullOnDelete();
-    $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-    $table->text('internal_note')->nullable();
+            /*
+            |--------------------------------------------------------------------------
+            | Complaint Details
+            |--------------------------------------------------------------------------
+            */
 
-    $table->timestamps();
-});
+            $table->enum('type', [
+                'complaint',
+                'feedback',
+            ])->default('complaint');
+
+            $table->string('category')->nullable();
+
+            $table->string('title');
+
+            $table->longText('description');
+
+            $table->string('image')->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Priority & Status
+            |--------------------------------------------------------------------------
+            */
+
+            $table->enum('priority', [
+                'low',
+                'medium',
+                'high',
+                'urgent',
+            ])->default('medium');
+
+            $table->enum('status', [
+                'pending',
+                'in_progress',
+                'resolved',
+                'closed',
+            ])->default('pending');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Audit
+            |--------------------------------------------------------------------------
+            */
+
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('handled_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->timestamp('handled_at')->nullable();
+
+            $table->text('internal_note')->nullable();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Timestamps
+            |--------------------------------------------------------------------------
+            */
+
+            $table->timestamps();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Indexes
+            |--------------------------------------------------------------------------
+            */
+
+            $table->index('hotel_id');
+            $table->index('status');
+            $table->index('priority');
+            $table->index('room_number');
+            $table->index('created_by');
+            $table->index('handled_by');
+        });
     }
 
     /**

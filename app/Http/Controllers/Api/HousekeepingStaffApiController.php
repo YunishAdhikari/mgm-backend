@@ -17,10 +17,8 @@ class HousekeepingStaffApiController extends Controller
     {
         $user = $request->user();
 
-        $rooms = HousekeepingRoomAllocation::with([
-                'room',
-                'roomStatusUpdate',
-            ])
+        $rooms = HousekeepingRoomAllocation::with(['room', 'roomStatusUpdate'])
+            ->where('hotel_id', $user->hotel_id)
             ->where('assigned_to', $user->id)
             ->whereDate('allocation_date', today())
             ->get()
@@ -37,10 +35,7 @@ class HousekeepingStaffApiController extends Controller
                     'floor' => is_numeric($roomNumber) ? substr($roomNumber, 0, 1) : '-',
                     'room_status' => $allocation->roomStatusUpdate->status ?? '',
                     'cleaning_status' => $cleaningStatus,
-                    'count_as_cleaned' => in_array($cleaningStatus, [
-                        'inspection_pending',
-                        'inspected',
-                    ]),
+                    'count_as_cleaned' => in_array($cleaningStatus, ['inspection_pending', 'inspected']),
                     'display_status' => match ($cleaningStatus) {
                         'assigned' => 'Assigned',
                         'in_progress' => 'In Progress',
@@ -111,9 +106,10 @@ class HousekeepingStaffApiController extends Controller
         ]);
 
         $roomNumber = $allocation->room->room_number ?? '-';
+        $hotelId = $request->user()->hotel_id;
 
         $this->sendPushToUsers(
-            $this->hkSupervisors(),
+            $this->hkSupervisors($hotelId),
             'Room Ready For Inspection',
             'Room ' . $roomNumber . ' has been cleaned by ' . ($request->user()->name ?? 'staff'),
             [
@@ -121,6 +117,7 @@ class HousekeepingStaffApiController extends Controller
                 'action' => 'room_cleaned',
                 'allocation_id' => (string) $allocation->id,
                 'room_number' => (string) $roomNumber,
+                'hotel_id' => (string) $hotelId,
             ]
         );
 
@@ -141,9 +138,10 @@ class HousekeepingStaffApiController extends Controller
         ]);
 
         $roomNumber = $allocation->room->room_number ?? '-';
+        $hotelId = $request->user()->hotel_id;
 
         $this->sendPushToUsers(
-            $this->hkSupervisors(),
+            $this->hkSupervisors($hotelId),
             'Room Marked DND',
             'Room ' . $roomNumber . ' was marked as DND by ' . ($request->user()->name ?? 'staff'),
             [
@@ -151,6 +149,7 @@ class HousekeepingStaffApiController extends Controller
                 'action' => 'room_dnd',
                 'allocation_id' => (string) $allocation->id,
                 'room_number' => (string) $roomNumber,
+                'hotel_id' => (string) $hotelId,
             ]
         );
 
@@ -171,9 +170,10 @@ class HousekeepingStaffApiController extends Controller
         ]);
 
         $roomNumber = $allocation->room->room_number ?? '-';
+        $hotelId = $request->user()->hotel_id;
 
         $this->sendPushToUsers(
-            $this->hkSupervisors(),
+            $this->hkSupervisors($hotelId),
             'Room Refused Service',
             'Room ' . $roomNumber . ' refused service. Updated by ' . ($request->user()->name ?? 'staff'),
             [
@@ -181,6 +181,7 @@ class HousekeepingStaffApiController extends Controller
                 'action' => 'room_refused',
                 'allocation_id' => (string) $allocation->id,
                 'room_number' => (string) $roomNumber,
+                'hotel_id' => (string) $hotelId,
             ]
         );
 
@@ -198,21 +199,27 @@ class HousekeepingStaffApiController extends Controller
             'issue' => 'required|string|max:1000',
         ]);
 
+        $user = $request->user();
+        $hotelId = $user->hotel_id;
+
         $allocation->load(['room', 'assignedTo']);
 
-        $maintenanceDepartment = Department::whereRaw('LOWER(name) = ?', ['maintenance'])->first();
+        $maintenanceDepartment = Department::where('hotel_id', $hotelId)
+            ->whereRaw('LOWER(name) = ?', ['maintenance'])
+            ->first();
 
         if (!$maintenanceDepartment) {
             return response()->json([
                 'success' => false,
-                'message' => 'Maintenance department not found.',
+                'message' => 'Maintenance department not found for this hotel.',
             ], 404);
         }
 
         $roomNumber = $allocation->room->room_number ?? null;
 
         $job = MaintenanceJob::create([
-            'reported_by' => $request->user()->id,
+            'hotel_id' => $hotelId,
+            'reported_by' => $user->id,
             'department_id' => $maintenanceDepartment->id,
             'assigned_to' => null,
             'title' => 'Room maintenance required',
@@ -230,7 +237,7 @@ class HousekeepingStaffApiController extends Controller
         ]);
 
         $this->sendPushToUsers(
-            $this->maintenanceUsers(),
+            $this->maintenanceUsers($hotelId),
             'New Room Maintenance Issue',
             'Room ' . ($roomNumber ?? '-') . ': ' . $request->issue,
             [
@@ -238,19 +245,21 @@ class HousekeepingStaffApiController extends Controller
                 'action' => 'created_from_housekeeping',
                 'job_id' => (string) $job->id,
                 'room_number' => (string) ($roomNumber ?? '-'),
+                'hotel_id' => (string) $hotelId,
             ]
         );
 
         $this->sendPushToUsers(
-            $this->hkSupervisors(),
+            $this->hkSupervisors($hotelId),
             'HK Maintenance Reported',
-            'Room ' . ($roomNumber ?? '-') . ' maintenance issue reported by ' . ($request->user()->name ?? 'staff'),
+            'Room ' . ($roomNumber ?? '-') . ' maintenance issue reported by ' . ($user->name ?? 'staff'),
             [
                 'type' => 'housekeeping',
                 'action' => 'maintenance_reported',
                 'allocation_id' => (string) $allocation->id,
                 'job_id' => (string) $job->id,
                 'room_number' => (string) ($roomNumber ?? '-'),
+                'hotel_id' => (string) $hotelId,
             ]
         );
 
@@ -262,11 +271,14 @@ class HousekeepingStaffApiController extends Controller
 
     public function supervisorProgress(Request $request)
     {
+        $hotelId = $request->user()->hotel_id;
+
         $allocations = HousekeepingRoomAllocation::with([
                 'room',
                 'assignedTo',
                 'roomStatusUpdate',
             ])
+            ->where('hotel_id', $hotelId)
             ->whereDate('allocation_date', today())
             ->get();
 
@@ -327,11 +339,14 @@ class HousekeepingStaffApiController extends Controller
 
     public function inspectionQueue(Request $request)
     {
+        $hotelId = $request->user()->hotel_id;
+
         $rooms = HousekeepingRoomAllocation::with([
                 'room',
                 'assignedTo',
                 'roomStatusUpdate',
             ])
+            ->where('hotel_id', $hotelId)
             ->whereDate('allocation_date', today())
             ->where('cleaning_status', 'inspection_pending')
             ->orderBy('cleaned_at', 'asc')
@@ -357,6 +372,8 @@ class HousekeepingStaffApiController extends Controller
 
     public function approveInspection(Request $request, HousekeepingRoomAllocation $allocation)
     {
+        $this->checkHotelAccess($request, $allocation);
+
         if ($allocation->cleaning_status !== 'inspection_pending') {
             return response()->json([
                 'success' => false,
@@ -382,6 +399,7 @@ class HousekeepingStaffApiController extends Controller
                 'action' => 'inspection_approved',
                 'allocation_id' => (string) $allocation->id,
                 'room_number' => (string) $roomNumber,
+                'hotel_id' => (string) $allocation->hotel_id,
             ]
         );
 
@@ -393,6 +411,8 @@ class HousekeepingStaffApiController extends Controller
 
     public function rejectInspection(Request $request, HousekeepingRoomAllocation $allocation)
     {
+        $this->checkHotelAccess($request, $allocation);
+
         $request->validate([
             'reason' => 'required|string|max:1000',
         ]);
@@ -424,6 +444,7 @@ class HousekeepingStaffApiController extends Controller
                 'action' => 'inspection_rejected',
                 'allocation_id' => (string) $allocation->id,
                 'room_number' => (string) $roomNumber,
+                'hotel_id' => (string) $allocation->hotel_id,
             ]
         );
 
@@ -433,10 +454,27 @@ class HousekeepingStaffApiController extends Controller
         ]);
     }
 
-    private function checkOwnership(Request $request, HousekeepingRoomAllocation $allocation)
+    private function checkOwnership(Request $request, HousekeepingRoomAllocation $allocation): void
     {
-        if ((int) $allocation->assigned_to !== (int) $request->user()->id) {
+        $user = $request->user();
+
+        if ((int) $allocation->hotel_id !== (int) $user->hotel_id) {
+            abort(403, 'You are not allowed to access this hotel room.');
+        }
+
+        if ((int) $allocation->assigned_to !== (int) $user->id) {
             abort(403, 'You are not allowed to update this room.');
+        }
+
+        if ($allocation->allocation_date !== today()->toDateString()) {
+            abort(403, 'You can only update today allocated rooms.');
+        }
+    }
+
+    private function checkHotelAccess(Request $request, HousekeepingRoomAllocation $allocation): void
+    {
+        if ((int) $allocation->hotel_id !== (int) $request->user()->hotel_id) {
+            abort(403, 'You are not allowed to access this hotel room.');
         }
 
         if ($allocation->allocation_date !== today()->toDateString()) {
@@ -480,14 +518,16 @@ class HousekeepingStaffApiController extends Controller
         return $sent;
     }
 
-    private function hkSupervisors()
+    private function hkSupervisors(int $hotelId)
     {
-        return User::whereHas('department', function ($q) {
-                $q->whereRaw('LOWER(name) IN (?, ?, ?)', [
-                    'housekeeping',
-                    'house keeping',
-                    'hk',
-                ]);
+        return User::where('hotel_id', $hotelId)
+            ->whereHas('department', function ($q) use ($hotelId) {
+                $q->where('hotel_id', $hotelId)
+                    ->whereRaw('LOWER(name) IN (?, ?, ?)', [
+                        'housekeeping',
+                        'house keeping',
+                        'hk',
+                    ]);
             })
             ->whereHas('role', function ($q) {
                 $q->whereRaw('LOWER(name) IN (?, ?, ?)', [
@@ -500,10 +540,12 @@ class HousekeepingStaffApiController extends Controller
             ->get();
     }
 
-    private function maintenanceUsers()
+    private function maintenanceUsers(int $hotelId)
     {
-        return User::whereHas('department', function ($q) {
-                $q->whereRaw('LOWER(name) = ?', ['maintenance']);
+        return User::where('hotel_id', $hotelId)
+            ->whereHas('department', function ($q) use ($hotelId) {
+                $q->where('hotel_id', $hotelId)
+                    ->whereRaw('LOWER(name) = ?', ['maintenance']);
             })
             ->whereNotNull('fcm_token')
             ->get();

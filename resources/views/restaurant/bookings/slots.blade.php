@@ -449,14 +449,16 @@
                     </div>
 
                     @if(!$isFull)
-                        <a href="{{ route('reception.restaurant.bookings.create', [
+                    <a href="{{ route('reception.restaurant.bookings.create', [
                             'type' => $type,
                             'slotStart' => $slot['start'],
                             'slotEnd' => $slot['end'],
+                            'restaurant_id' => $restaurant->id,
                             'date' => $bookingDate,
                         ]) }}" class="slot-btn available">
                             Book Now →
                         </a>
+                        
                     @else
                         <span class="slot-btn full">
                             Slot Full

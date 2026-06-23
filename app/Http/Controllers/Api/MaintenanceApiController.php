@@ -8,21 +8,28 @@ use App\Mail\MaintenanceCompletedMail;
 use App\Models\Department;
 use App\Models\MaintenanceJob;
 use App\Models\User;
+use App\Services\FirebaseNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use App\Services\FirebaseNotificationService;
 
 class MaintenanceApiController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
+
         $query = MaintenanceJob::with([
+            'hotel',
             'department',
             'reporter',
-            'assignedUser'
+            'assignedUser',
         ]);
+
+        if (! $user->isAdmin()) {
+            $query->where('hotel_id', $user->hotel_id);
+        }
 
         if ($request->status) {
             $query->where('status', $request->status);
@@ -33,7 +40,7 @@ class MaintenanceApiController extends Controller
         }
 
         if ($request->assigned === 'me') {
-            $query->where('assigned_to', $request->user()->id);
+            $query->where('assigned_to', $user->id);
         }
 
         $jobs = $query->latest()->get();
@@ -46,7 +53,17 @@ class MaintenanceApiController extends Controller
 
     public function store(Request $request)
     {
+        $user = $request->user();
+
+        if (! $user->hotel_id && ! $user->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User is not assigned to a hotel.',
+            ], 422);
+        }
+
         $request->validate([
+            'hotel_id' => $user->isAdmin() ? 'nullable|exists:hotels,id' : 'nullable',
             'department_id' => 'required|exists:departments,id',
             'assigned_to' => 'nullable|exists:users,id',
             'title' => 'required|string|max:255',
@@ -57,14 +74,26 @@ class MaintenanceApiController extends Controller
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
+        $hotelId = $user->isAdmin()
+            ? ($request->hotel_id ?? $user->hotel_id)
+            : $user->hotel_id;
+
+        if (! $hotelId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hotel is required for this maintenance job.',
+            ], 422);
+        }
+
         $imageName = null;
 
         if ($request->hasFile('image')) {
-            $imageName = time() . '.' . $request->image->extension();
+            $imageName = time() . '_' . uniqid() . '.' . $request->image->extension();
             $request->image->move(public_path('uploads/maintenance'), $imageName);
         }
 
         $job = MaintenanceJob::create([
+            'hotel_id' => $hotelId,
             'reported_by' => Auth::id(),
             'department_id' => $request->department_id,
             'assigned_to' => $request->assigned_to,
@@ -84,9 +113,9 @@ class MaintenanceApiController extends Controller
         try {
             $recipients = $this->maintenanceRecipients($job);
 
-            foreach ($recipients as $user) {
-                if (!empty($user->email)) {
-                    Mail::to($user->email)->send(new MaintenanceAssignedMail($job));
+            foreach ($recipients as $recipient) {
+                if (! empty($recipient->email)) {
+                    Mail::to($recipient->email)->send(new MaintenanceAssignedMail($job));
                     $emailSentCount++;
                 }
             }
@@ -99,6 +128,7 @@ class MaintenanceApiController extends Controller
                     'type' => 'maintenance',
                     'action' => 'created',
                     'job_id' => (string) $job->id,
+                    'hotel_id' => (string) $job->hotel_id,
                     'priority' => (string) $job->priority,
                     'status' => (string) $job->status,
                 ]
@@ -112,7 +142,7 @@ class MaintenanceApiController extends Controller
             'message' => 'Maintenance task added successfully.',
             'emails_sent' => $emailSentCount,
             'push_sent' => $pushSentCount,
-            'job' => $job->load(['department', 'reporter', 'assignedUser']),
+            'job' => $job->load(['hotel', 'department', 'reporter', 'assignedUser']),
         ], 201);
     }
 
@@ -124,14 +154,26 @@ class MaintenanceApiController extends Controller
 
         $user = $request->user();
 
-        if ($user->department?->name !== 'Maintenance') {
+        if ($user->department?->name !== 'Maintenance' && ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only maintenance department can update task status.',
             ], 403);
         }
 
-        $job = MaintenanceJob::with(['department', 'reporter', 'assignedUser'])->findOrFail($id);
+        $job = MaintenanceJob::with([
+            'hotel',
+            'department',
+            'reporter',
+            'assignedUser',
+        ])->findOrFail($id);
+
+        if (! $user->isAdmin() && $job->hotel_id != $user->hotel_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot update a maintenance job from another hotel.',
+            ], 403);
+        }
 
         $oldStatus = $job->status;
 
@@ -152,13 +194,11 @@ class MaintenanceApiController extends Controller
             $recipients = $this->maintenanceRecipients($job);
 
             if ($job->status === 'completed') {
-                $emails = User::where('department_id', $job->department_id)
-                    ->whereNotNull('email')
-                    ->pluck('email');
-
-                foreach ($emails as $email) {
-                    Mail::to($email)->send(new MaintenanceCompletedMail($job));
-                    $emailSentCount++;
+                foreach ($recipients as $recipient) {
+                    if (! empty($recipient->email)) {
+                        Mail::to($recipient->email)->send(new MaintenanceCompletedMail($job));
+                        $emailSentCount++;
+                    }
                 }
 
                 $pushSentCount = $this->sendPushToUsers(
@@ -169,6 +209,7 @@ class MaintenanceApiController extends Controller
                         'type' => 'maintenance',
                         'action' => 'completed',
                         'job_id' => (string) $job->id,
+                        'hotel_id' => (string) $job->hotel_id,
                         'old_status' => (string) $oldStatus,
                         'status' => (string) $job->status,
                     ]
@@ -182,6 +223,7 @@ class MaintenanceApiController extends Controller
                         'type' => 'maintenance',
                         'action' => 'status_updated',
                         'job_id' => (string) $job->id,
+                        'hotel_id' => (string) $job->hotel_id,
                         'old_status' => (string) $oldStatus,
                         'status' => (string) $job->status,
                     ]
@@ -196,7 +238,7 @@ class MaintenanceApiController extends Controller
             'message' => 'Status updated successfully.',
             'emails_sent' => $emailSentCount,
             'push_sent' => $pushSentCount,
-            'job' => $job->fresh(['department', 'reporter', 'assignedUser']),
+            'job' => $job->fresh(['hotel', 'department', 'reporter', 'assignedUser']),
         ]);
     }
 
@@ -208,14 +250,26 @@ class MaintenanceApiController extends Controller
 
         $user = $request->user();
 
-        if ($user->department?->name !== 'Maintenance') {
+        if ($user->department?->name !== 'Maintenance' && ! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only maintenance department can update task notes.',
             ], 403);
         }
 
-        $job = MaintenanceJob::with(['department', 'reporter', 'assignedUser'])->findOrFail($id);
+        $job = MaintenanceJob::with([
+            'hotel',
+            'department',
+            'reporter',
+            'assignedUser',
+        ])->findOrFail($id);
+
+        if (! $user->isAdmin() && $job->hotel_id != $user->hotel_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot update a maintenance job from another hotel.',
+            ], 403);
+        }
 
         $job->note = $request->note;
         $job->save();
@@ -233,6 +287,7 @@ class MaintenanceApiController extends Controller
                     'type' => 'maintenance',
                     'action' => 'note_updated',
                     'job_id' => (string) $job->id,
+                    'hotel_id' => (string) $job->hotel_id,
                     'status' => (string) $job->status,
                 ]
             );
@@ -244,17 +299,27 @@ class MaintenanceApiController extends Controller
             'success' => true,
             'message' => 'Note updated successfully.',
             'push_sent' => $pushSentCount,
-            'job' => $job->fresh(['department', 'reporter', 'assignedUser']),
+            'job' => $job->fresh(['hotel', 'department', 'reporter', 'assignedUser']),
         ]);
     }
 
     public function myJobs(Request $request)
     {
-        $jobs = MaintenanceJob::with(['department', 'reporter'])
-            ->where('assigned_to', $request->user()->id)
-            ->where('status', '!=', 'completed')
-            ->latest()
-            ->get();
+        $user = $request->user();
+
+        $jobs = MaintenanceJob::with([
+            'hotel',
+            'department',
+            'reporter',
+        ])
+            ->where('assigned_to', $user->id)
+            ->where('status', '!=', 'completed');
+
+        if (! $user->isAdmin()) {
+            $jobs->where('hotel_id', $user->hotel_id);
+        }
+
+        $jobs = $jobs->latest()->get();
 
         return response()->json([
             'success' => true,
@@ -296,6 +361,10 @@ class MaintenanceApiController extends Controller
                             'duty manager',
                         ]);
                     });
+            })
+            ->where(function ($query) use ($job) {
+                $query->where('hotel_id', $job->hotel_id)
+                    ->orWhereNull('hotel_id');
             })
             ->get()
             ->unique('id')

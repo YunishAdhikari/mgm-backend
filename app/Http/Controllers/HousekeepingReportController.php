@@ -12,24 +12,33 @@ class HousekeepingReportController extends Controller
 {
     public function productivity(Request $request)
     {
+        $hotelId = auth()->user()->hotel_id;
+
         $date = $request->date ?? today()->toDateString();
 
         $departureMinutes = 30;
         $stayMinutes = 15;
 
         $hkStaff = User::with('department')
-            ->whereHas('department', function ($query) {
-                $query->whereIn('name', [
-                    'Housekeeping',
-                    'HK',
-                    'House Keeping',
-                ]);
+            ->where('hotel_id', $hotelId)
+            ->where('status', 'active')
+            ->whereHas('department', function ($query) use ($hotelId) {
+                $query->where('hotel_id', $hotelId)
+                    ->whereIn('name', [
+                        'Housekeeping',
+                        'HK',
+                        'House Keeping',
+                    ]);
             })
             ->orderBy('name')
             ->get();
 
-        $reports = $hkStaff->map(function ($staff) use ($date, $departureMinutes, $stayMinutes) {
-
+        $reports = $hkStaff->map(function ($staff) use (
+            $date,
+            $departureMinutes,
+            $stayMinutes,
+            $hotelId
+        ) {
             $attendance = AttendanceLog::where('user_id', $staff->id)
                 ->whereDate('attendance_date', $date)
                 ->first();
@@ -37,14 +46,24 @@ class HousekeepingReportController extends Controller
             $workedMinutes = 0;
 
             if ($attendance && $attendance->clock_in_at && $attendance->clock_out_at) {
-                $workedMinutes = Carbon::parse($attendance->clock_in_at)
-                    ->diffInMinutes(Carbon::parse($attendance->clock_out_at));
+                $clockIn = Carbon::parse($attendance->clock_in_at);
+                $clockOut = Carbon::parse($attendance->clock_out_at);
+
+                if ($clockOut->lessThan($clockIn)) {
+                    $clockOut->addDay();
+                }
+
+                $workedMinutes = $clockIn->diffInMinutes($clockOut);
             }
 
             $allocations = HousekeepingRoomAllocation::with('roomStatusUpdate')
+                ->where('hotel_id', $hotelId)
                 ->where('assigned_to', $staff->id)
                 ->whereDate('allocation_date', $date)
-                ->whereIn('cleaning_status', ['cleaned', 'inspected'])
+                ->whereIn('cleaning_status', [
+                    'cleaned',
+                    'inspected',
+                ])
                 ->get();
 
             $departures = $allocations->filter(function ($allocation) {
@@ -84,11 +103,14 @@ class HousekeepingReportController extends Controller
             ];
         });
 
-        return view('dashboard.housekeeping.reports.productivity', compact(
-            'date',
-            'reports',
-            'departureMinutes',
-            'stayMinutes'
-        ));
+        return view(
+            'dashboard.housekeeping.reports.productivity',
+            compact(
+                'date',
+                'reports',
+                'departureMinutes',
+                'stayMinutes'
+            )
+        );
     }
 }

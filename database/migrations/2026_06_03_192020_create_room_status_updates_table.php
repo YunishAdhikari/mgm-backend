@@ -14,7 +14,13 @@ return new class extends Migration
         Schema::create('room_status_updates', function (Blueprint $table) {
     $table->id();
 
-    $table->foreignId('room_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('hotel_id')
+        ->constrained()
+        ->cascadeOnDelete();
+
+    $table->foreignId('room_id')
+        ->constrained()
+        ->cascadeOnDelete();
 
     $table->date('status_date');
 
@@ -24,8 +30,7 @@ return new class extends Migration
         'room_move',
         'carry_forward',
         'OOO',
-        'OOI'
-
+        'OOI',
     ]);
 
     $table->text('notes')->nullable();
@@ -35,6 +40,9 @@ return new class extends Migration
         ->cascadeOnDelete();
 
     $table->timestamps();
+
+    $table->unique(['room_id', 'status_date']);
+    $table->index(['hotel_id', 'status_date']);
 });
     }
 

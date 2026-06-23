@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Role;
 
@@ -13,19 +12,80 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        Role::insert([
-            ['name' => 'admin'],
-            ['name' => 'manager'],
-            ['name' => 'Assistant Manger'],
-            ['name' => 'Duty Manager'],
-            ['name' => 'supervisor'],
-            ['name' => 'Housekeeper'],
-            ['name' => 'chef'],
-            ['name' => 'Kitchen Porter'],
-            ['name' => 'Staff'],
-            ['name' => 'Linen Porter'],
-            ['name' => 'Public Area'],
-            ['name' => 'Head chef'],
-        ]);
+$roles = [
+
+    // Platform
+    'admin',
+
+    // Executive Management
+    'general-manager',
+    'director-of-operations',
+    'operations-manager',
+    'director-of-sales',
+    'financial-controller',
+    'human-resources-manager',
+    'it-manager',
+    'project-engineer',
+
+    // Hotel Management
+    'manager',
+    'assistant-manager',
+    'duty-manager',
+    'supervisor',
+
+    // Front Office
+    'front-office-manager',
+    'receptionist',
+    'night-auditor',
+    'night-porter',
+    'reservations',
+
+    // Housekeeping
+    'executive-housekeeper',
+    'housekeeping-supervisor',
+    'housekeeper',
+    'linen-porter',
+    'public-area-attendant',
+
+    // Maintenance
+    'chief-engineer',
+    'maintenance-manager',
+    'maintenance-technician',
+
+    // Food & Beverage
+    'food-and-beverage-manager',
+    'restaurant-manager',
+    'restaurant-supervisor',
+    'restaurant-staff',
+    'bartender',
+    'bar-supervisor',
+
+    // Kitchen
+    'executive-chef',
+    'head-chef',
+    'sous-chef',
+    'chef-de-partie',
+    'commis-chef',
+    'kitchen-supervisor',
+    'kitchen-porter',
+
+    // Sales & Finance
+    'sales-executive',
+    'finance',
+    'accountant',
+
+    // Other Operations
+    'security',
+    'spa-therapist',
+    'pool-attendant',
+];
+        foreach ($roles as $role) {
+
+            Role::updateOrCreate(
+                ['name' => $role],
+                []
+            );
+
+        }
     }
 }

@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('housekeeping_room_allocations', function (Blueprint $table) {
     $table->id();
 
+    $table->foreignId('hotel_id')
+        ->constrained()
+        ->cascadeOnDelete();
+
     $table->foreignId('room_status_update_id')
         ->constrained('room_status_updates')
         ->cascadeOnDelete();
@@ -53,6 +57,9 @@ return new class extends Migration
     $table->timestamp('inspected_at')->nullable();
 
     $table->timestamps();
+
+    $table->index(['hotel_id', 'allocation_date']);
+    $table->index(['assigned_to', 'allocation_date']);
 });
     }
 

@@ -11,9 +11,11 @@ class HousekeepingBoardController extends Controller
     public function index(Request $request)
     {
         $date = $request->date ?? now()->toDateString();
+        $hotelId = auth()->user()->hotel_id;
 
         $statuses = RoomStatusUpdate::with(['room.roomType', 'updatedBy'])
-            ->where('status_date', $date)
+            ->where('hotel_id', $hotelId)
+            ->whereDate('status_date', $date)
             ->whereIn('status', [
                 'departure',
                 'stay',

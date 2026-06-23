@@ -10,24 +10,34 @@ use Carbon\Carbon;
 
 class HousekeepingSupervisorRotaController extends Controller
 {
+    private function hotelId(): int
+    {
+        return (int) auth()->user()->hotel_id;
+    }
+
     public function index(Request $request)
     {
-        $selectedDate = $request->date ?? today()->toDateString();
+        $hotelId = $this->hotelId();
 
+        $selectedDate = $request->date ?? today()->toDateString();
         $date = Carbon::parse($selectedDate);
 
         $hkStaff = User::with('department')
-            ->whereHas('department', function ($query) {
-                $query->whereIn('name', [
-                    'Housekeeping',
-                    'HK',
-                    'House Keeping',
-                ]);
+            ->where('hotel_id', $hotelId)
+            ->whereHas('department', function ($query) use ($hotelId) {
+                $query->where('hotel_id', $hotelId)
+                    ->whereIn('name', [
+                        'Housekeeping',
+                        'HK',
+                        'House Keeping',
+                    ]);
             })
+            ->where('status', 'active')
             ->orderBy('name')
             ->get();
 
-        $existingShifts = RotaShift::whereDate('shift_date', $date)
+        $existingShifts = RotaShift::where('hotel_id', $hotelId)
+            ->whereDate('shift_date', $date)
             ->get()
             ->keyBy('user_id');
 
@@ -40,6 +50,8 @@ class HousekeepingSupervisorRotaController extends Controller
 
     public function saveDraft(Request $request)
     {
+        $hotelId = $this->hotelId();
+
         $request->validate([
             'date' => 'required|date',
             'staff_ids' => 'required|array',
@@ -49,13 +61,19 @@ class HousekeepingSupervisorRotaController extends Controller
             'end_time' => 'nullable|required_unless:shift_type,day_off,holiday,sick',
         ]);
 
-        foreach ($request->staff_ids as $staffId) {
+        $staff = User::where('hotel_id', $hotelId)
+            ->whereIn('id', $request->staff_ids)
+            ->get();
+
+        foreach ($staff as $employee) {
             RotaShift::updateOrCreate(
                 [
-                    'user_id' => $staffId,
+                    'hotel_id' => $hotelId,
+                    'user_id' => $employee->id,
                     'shift_date' => $request->date,
                 ],
                 [
+                    'department_id' => $employee->department_id,
                     'shift_type' => $request->shift_type,
                     'start_time' => in_array($request->shift_type, ['day_off', 'holiday', 'sick'])
                         ? null
@@ -73,82 +91,98 @@ class HousekeepingSupervisorRotaController extends Controller
     }
 
     public function removeDraft(RotaShift $shift)
-{
-    if ($shift->status !== 'draft') {
-        return back()->with('error', 'Only draft rota shifts can be removed.');
+    {
+        if ((int) $shift->hotel_id !== $this->hotelId()) {
+            abort(403);
+        }
+
+        if ($shift->status !== 'draft') {
+            return back()->with('error', 'Only draft rota shifts can be removed.');
+        }
+
+        $shift->delete();
+
+        return back()->with('success', 'Staff removed from draft rota successfully.');
     }
 
-    $shift->delete();
+    public function view(Request $request)
+    {
+        $hotelId = $this->hotelId();
 
-    return back()->with('success', 'Staff removed from draft rota successfully.');
-}
+        $weekStart = $request->week_start
+            ? Carbon::parse($request->week_start)->startOfWeek()
+            : today()->startOfWeek();
 
+        $weekEnd = $weekStart->copy()->endOfWeek();
 
-public function view(Request $request)
-{
-    $weekStart = $request->week_start
-        ? \Carbon\Carbon::parse($request->week_start)->startOfWeek()
-        : today()->startOfWeek();
+        $weekDays = collect();
 
-    $weekEnd = $weekStart->copy()->endOfWeek();
+        for ($i = 0; $i < 7; $i++) {
+            $weekDays->push($weekStart->copy()->addDays($i));
+        }
 
-    $weekDays = collect();
+        $hkStaff = User::with('department')
+            ->where('hotel_id', $hotelId)
+            ->whereHas('department', function ($query) use ($hotelId) {
+                $query->where('hotel_id', $hotelId)
+                    ->whereIn('name', [
+                        'Housekeeping',
+                        'HK',
+                        'House Keeping',
+                    ]);
+            })
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
 
-    for ($i = 0; $i < 7; $i++) {
-        $weekDays->push($weekStart->copy()->addDays($i));
-    }
-
-    $hkStaff = User::with('department')
-        ->whereHas('department', function ($query) {
-            $query->whereIn('name', [
-                'Housekeeping',
-                'HK',
-                'House Keeping',
-            ]);
-        })
-        ->orderBy('name')
-        ->get();
-
-    $shifts = RotaShift::whereBetween('shift_date', [
-            $weekStart->toDateString(),
-            $weekEnd->toDateString(),
-        ])
-        ->get()
-        ->groupBy(function ($shift) {
-            return $shift->user_id . '_' . $shift->shift_date;
-        });
-
-    $stats = [
-        'staff_count' => $hkStaff->count(),
-        'draft' => RotaShift::whereBetween('shift_date', [
+        $shifts = RotaShift::where('hotel_id', $hotelId)
+            ->whereBetween('shift_date', [
                 $weekStart->toDateString(),
                 $weekEnd->toDateString(),
             ])
-            ->where('status', 'draft')
-            ->count(),
+            ->get()
+            ->groupBy(function ($shift) {
+                return $shift->user_id . '_' . $shift->shift_date;
+            });
 
-        'published' => RotaShift::whereBetween('shift_date', [
-                $weekStart->toDateString(),
-                $weekEnd->toDateString(),
-            ])
-            ->where('status', 'published')
-            ->count(),
-    ];
+        $stats = [
+            'staff_count' => $hkStaff->count(),
 
-    return view('dashboard.housekeeping.rota.view', compact(
-        'weekStart',
-        'weekEnd',
-        'weekDays',
-        'hkStaff',
-        'shifts',
-        'stats'
-    ));
-}
+            'draft' => RotaShift::where('hotel_id', $hotelId)
+                ->whereBetween('shift_date', [
+                    $weekStart->toDateString(),
+                    $weekEnd->toDateString(),
+                ])
+                ->where('status', 'draft')
+                ->count(),
 
+            'published' => RotaShift::where('hotel_id', $hotelId)
+                ->whereBetween('shift_date', [
+                    $weekStart->toDateString(),
+                    $weekEnd->toDateString(),
+                ])
+                ->where('status', 'published')
+                ->count(),
+        ];
+
+        return view('dashboard.housekeeping.rota.view', compact(
+            'weekStart',
+            'weekEnd',
+            'weekDays',
+            'hkStaff',
+            'shifts',
+            'stats'
+        ));
+    }
 
     public function holidayCalendar()
     {
+        $hotelId = $this->hotelId();
+
         $holidayRequests = HolidayRequest::with(['user', 'department'])
+            ->whereHas('user', function ($query) use ($hotelId) {
+                $query->where('hotel_id', $hotelId);
+            })
             ->whereIn('status', ['approved', 'pending'])
             ->get();
 
@@ -156,7 +190,7 @@ public function view(Request $request)
             return [
                 'title' => ($holiday->user->name ?? 'Staff') . ' - ' . ucfirst($holiday->status),
                 'start' => $holiday->start_date,
-                'end' => \Carbon\Carbon::parse($holiday->end_date)->addDay()->format('Y-m-d'),
+                'end' => Carbon::parse($holiday->end_date)->addDay()->format('Y-m-d'),
                 'color' => $holiday->status === 'approved' ? '#22c55e' : '#f59e0b',
                 'extendedProps' => [
                     'employee' => $holiday->user->name ?? 'N/A',

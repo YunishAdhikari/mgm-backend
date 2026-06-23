@@ -26,6 +26,14 @@ class DashboardController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
+        // DoP / Director of Operations
+            if (
+                in_array($roleSlug, ['dop', 'director-of-operations', 'director-operations']) ||
+                in_array($roleName, ['dop', 'director-of-operations', 'director operations'])
+            ) {
+                return redirect()->route('dop.dashboard');
+            }
+
         // Manager
         if ($roleSlug === 'manager' || $roleName === 'manager') {
             return redirect()->route('manager.dashboard');

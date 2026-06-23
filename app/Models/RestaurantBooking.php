@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class RestaurantBooking extends Model
 {
-    protected $fillable = [
+protected $fillable = [
+    'restaurant_id',
     'booking_type',
     'restaurant_table_id',
     'guest_name',
@@ -15,14 +16,14 @@ class RestaurantBooking extends Model
     'booking_date',
     'slot_start_time',
     'slot_end_time',
+    'voucher_code',
+    'voucher_amount',
+    'voucher_note',
     'pax',
     'is_overbooking',
     'status',
     'special_request',
     'created_by',
-    'voucher_code',
-    'voucher_amount',
-    'voucher_note',
 ];
 
 protected $casts = [
@@ -40,5 +41,8 @@ public function creator()
     return $this->belongsTo(User::class, 'created_by');
 }
 
-
+public function restaurant()
+{
+    return $this->belongsTo(Restaurant::class);
+}
 }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class MaintenanceJob extends Model
 {
     protected $fillable = [
+        'hotel_id',
         'reported_by',
         'department_id',
         'assigned_to',
@@ -15,13 +16,27 @@ class MaintenanceJob extends Model
         'location',
         'room_number',
         'image',
+        'note',
         'priority',
         'status',
         'reported_date',
         'completed_date',
     ];
 
-    protected $appends = ['image_url'];
+    protected $appends = [
+        'image_url',
+    ];
+
+    protected $casts = [
+        'reported_date' => 'date',
+        'completed_date' => 'date',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Accessors
+    |--------------------------------------------------------------------------
+    */
 
     public function getImageUrlAttribute()
     {
@@ -32,22 +47,25 @@ class MaintenanceJob extends Model
         return asset('uploads/maintenance/' . $this->image);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function hotel()
+    {
+        return $this->belongsTo(Hotel::class);
+    }
+
     public function reporter()
     {
         return $this->belongsTo(User::class, 'reported_by');
     }
 
-    public function reportedBy()
-    {
-        return $this->belongsTo(User::class, 'reported_by');
-    }
+    
 
     public function assignedUser()
-    {
-        return $this->belongsTo(User::class, 'assigned_to');
-    }
-
-    public function assignedTo()
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
@@ -56,5 +74,4 @@ class MaintenanceJob extends Model
     {
         return $this->belongsTo(Department::class);
     }
-
 }

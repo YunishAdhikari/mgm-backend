@@ -12,26 +12,33 @@ class KitchenWastageController extends Controller
 {
     public function index()
     {
-        $items = InventoryItem::where('department_id', auth()->user()->department_id)
+        $user = auth()->user();
+
+        $items = InventoryItem::where('hotel_id', $user->hotel_id)
+            ->where('department_id', $user->department_id)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
         $wastages = InventoryWastage::with(['item', 'user'])
-            ->whereHas('item', function ($query) {
-                $query->where('department_id', auth()->user()->department_id);
+            ->where('hotel_id', $user->hotel_id)
+            ->whereHas('item', function ($query) use ($user) {
+                $query->where('hotel_id', $user->hotel_id)
+                    ->where('department_id', $user->department_id);
             })
             ->latest()
             ->get();
 
-        return view('dashboard.kitchen-supervisor.wastage.index', compact(
-            'items',
-            'wastages'
-        ));
+        return view(
+            'dashboard.kitchen-supervisor.wastage.index',
+            compact('items', 'wastages')
+        );
     }
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+
         $request->validate([
             'inventory_item_id' => 'required|exists:inventory_items,id',
             'quantity' => 'required|numeric|min:0.01',
@@ -40,24 +47,31 @@ class KitchenWastageController extends Controller
         ]);
 
         $item = InventoryItem::where('id', $request->inventory_item_id)
-            ->where('department_id', auth()->user()->department_id)
+            ->where('hotel_id', $user->hotel_id)
+            ->where('department_id', $user->department_id)
             ->firstOrFail();
 
-        DB::transaction(function () use ($request, $item) {
-            $item->quantity = max(0, $item->quantity - $request->quantity);
-            $item->save();
+        if ($item->quantity < $request->quantity) {
+            return back()->with('error', 'Not enough stock available.');
+        }
+
+        DB::transaction(function () use ($request, $item, $user) {
+
+            $item->decrement('quantity', $request->quantity);
 
             InventoryWastage::create([
+                'hotel_id' => $user->hotel_id,
                 'inventory_item_id' => $item->id,
-                'user_id' => auth()->id(),
+                'user_id' => $user->id,
                 'quantity' => $request->quantity,
                 'reason' => $request->reason,
                 'note' => $request->note,
             ]);
 
             InventoryTransaction::create([
+                'hotel_id' => $user->hotel_id,
                 'inventory_item_id' => $item->id,
-                'user_id' => auth()->id(),
+                'user_id' => $user->id,
                 'type' => 'stock_out',
                 'quantity' => $request->quantity,
                 'note' => 'Wastage: ' . ($request->reason ?? 'No reason'),

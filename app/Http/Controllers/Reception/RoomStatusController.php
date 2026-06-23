@@ -10,46 +10,59 @@ use Illuminate\Support\Facades\Auth;
 
 class RoomStatusController extends Controller
 {
-    public function index(Request $request)
-    {
-        $date = $request->date ?? now()->toDateString();
+public function index(Request $request)
+{
+    $date = $request->date ?? now()->toDateString();
 
-        $rooms = Room::with([
-                'roomType',
-                'statusUpdates' => function ($query) use ($date) {
-                    $query->where('status_date', $date);
-                }
-            ])
-            ->where('is_active', true)
-            ->orderBy('floor')
-            ->orderBy('room_number')
-            ->get()
-            ->groupBy('floor');
+    $hotelId = auth()->user()->hotel_id;
 
-        return view('dashboard.reception.room-status.index', compact('rooms', 'date'));
-    }
+    $rooms = Room::with([
+            'roomType',
+            'statusUpdates' => function ($query) use ($date) {
+                $query->where('status_date', $date);
+            }
+        ])
+        ->where('hotel_id', $hotelId)
+        ->where('is_active', true)
+        ->orderBy('floor')
+        ->orderBy('room_number')
+        ->get()
+        ->groupBy('floor');
 
-    public function update(Request $request)
-    {
-        $request->validate([
-            'room_id' => 'required|exists:rooms,id',
-            'status_date' => 'required|date',
-            'status' => 'required|in:departure,stay,room_move,carry_forward,OOO,OOI',
-            'notes' => 'nullable|string',
-        ]);
+    return view(
+        'dashboard.reception.room-status.index',
+        compact('rooms', 'date')
+    );
+}
 
-        RoomStatusUpdate::updateOrCreate(
-            [
-                'room_id' => $request->room_id,
-                'status_date' => $request->status_date,
-            ],
-            [
-                'status' => $request->status,
-                'notes' => $request->notes,
-                'updated_by' => Auth::id(),
-            ]
-        );
+public function update(Request $request)
+{
+    $hotelId = auth()->user()->hotel_id;
 
-        return back()->with('success', 'Room status updated successfully.');
-    }
+    $request->validate([
+        'room_id' => 'required|exists:rooms,id',
+        'status_date' => 'required|date',
+        'status' => 'required|in:departure,stay,room_move,carry_forward,OOO,OOI',
+        'notes' => 'nullable|string',
+    ]);
+
+    $room = Room::where('hotel_id', $hotelId)
+        ->where('id', $request->room_id)
+        ->firstOrFail();
+
+    RoomStatusUpdate::updateOrCreate(
+        [
+            'hotel_id' => $hotelId,
+            'room_id' => $room->id,
+            'status_date' => $request->status_date,
+        ],
+        [
+            'status' => $request->status,
+            'notes' => $request->notes,
+            'updated_by' => Auth::id(),
+        ]
+    );
+
+    return back()->with('success', 'Room status updated successfully.');
+}
 }

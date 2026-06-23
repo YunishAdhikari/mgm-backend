@@ -2,32 +2,28 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Department;
 
 class DepartmentSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $departments = [
-    'manager',
-    'Reception',
-    'F&B',
-    'Housekeeping',
-    'Maintenance',
-    'admin',
-    'Kitchen'
-];
+        $globalDepartments = [
+            'Admin',
+            'DOPS',
+            'HR',
+            'Project Engineers',
+        ];
 
-foreach ($departments as $department) {
-    Department::updateOrCreate([
-        'name' => $department
-    ]);
-}
-
+        foreach ($globalDepartments as $department) {
+            Department::updateOrCreate(
+                [
+                    'hotel_id' => null,
+                    'name' => $department,
+                ],
+                []
+            );
+        }
     }
 }

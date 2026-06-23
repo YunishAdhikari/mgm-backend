@@ -305,7 +305,7 @@
 <div class="login-shell">
 
     <section class="brand-panel">
-        <div class="logo">MGM<span>Ops</span></div>
+        <div class="logo">MGM<span>One</span></div>
 
         <div class="brand-copy">
             <div class="pill">Internal Hotel Operations</div>

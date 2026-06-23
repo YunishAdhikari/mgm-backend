@@ -11,7 +11,7 @@ class NewsController extends Controller
 {
     public function create()
     {
-        return view('dashboard.admin.News.add');
+        return view('dashboard.admin.news.add');
     }
 
     public function store(Request $request)
@@ -46,22 +46,9 @@ class NewsController extends Controller
                 ->latest()
                 ->get();
 
-    return view('dashboard.admin.News.index', compact('news'));
+    return view('dashboard.admin.news.index', compact('news'));
 }
-//     public function index()
-// {
-//     $news = News::latest()->get();
 
-//     return view('dashboard.admin.news.index', compact('news'));
-// }
-
-// public function changeStatus(News $news)
-// {
-//     $news->status = $news->status === 'active' ? 'inactive' : 'active';
-//     $news->save();
-
-//     return redirect()->back()->with('success', 'News status updated successfully.');
-// }
 public function changeStatus($id)
 {
     $news = News::findOrFail($id);

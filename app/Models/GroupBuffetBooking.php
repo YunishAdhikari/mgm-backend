@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class GroupBuffetBooking extends Model
 {
     protected $fillable = [
+        'restaurant_id',
         'group_name',
         'agent_name',
         'buffet_date',
@@ -37,5 +38,10 @@ class GroupBuffetBooking extends Model
         RestaurantTable::class,
         'group_buffet_booking_tables'
     );
+}
+
+public function restaurant()
+{
+    return $this->belongsTo(Restaurant::class);
 }
 }

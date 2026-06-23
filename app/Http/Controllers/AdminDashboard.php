@@ -2,185 +2,201 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Admin\MaintenanceController;
-use App\Http\Controllers\Admin\NewsController;
-use Illuminate\Http\Request;
-
 use App\Models\Role;
+use App\Models\Hotel;
 use App\Models\Department;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\EmployeeCredentialsMail;
 use App\Models\ActivityLog;
 use App\Models\MaintenanceJob;
 use App\Models\News;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use App\Mail\EmployeeCredentialsMail;
 
 class AdminDashboard extends Controller
 {
+    public function dashboard()
+    {
+        $totalHotels = Hotel::count();
+        $activeHotels = Hotel::where('is_active', true)->count();
 
-public function dashboard()
-{
-    $totalEmployees = User::count();
-    $activeEmployees = User::where('status', 'active')->count();
+        $totalEmployees = User::count();
+        $activeEmployees = User::where('status', 'active')->count();
 
-    $openMaintenance = MaintenanceJob::where('status', '!=', 'completed')->count();
-    $pendingJobs = MaintenanceJob::where('status', 'pending')->count();
-    $inProgressJobs = MaintenanceJob::where('status', 'in_progress')->count();
-    $completedJobs = MaintenanceJob::where('status', 'completed')->count();
-    $cancelledJobs = MaintenanceJob::where('status', 'cancelled')->count();
+        $openMaintenance = MaintenanceJob::where('status', '!=', 'completed')->count();
+        $pendingJobs = MaintenanceJob::where('status', 'pending')->count();
+        $inProgressJobs = MaintenanceJob::where('status', 'in_progress')->count();
+        $completedJobs = MaintenanceJob::where('status', 'completed')->count();
+        $cancelledJobs = MaintenanceJob::where('status', 'cancelled')->count();
 
-    // If your News model exists, use this:
-    $activeNews = News::where('status', 'active')->count();
+        $activeNews = News::where('status', 'active')->count();
 
+        $statusChart = [
+            $pendingJobs,
+            $inProgressJobs,
+            $completedJobs,
+            $cancelledJobs,
+        ];
 
-    $statusChart = [
-    MaintenanceJob::where('status', 'pending')->count(),
-    MaintenanceJob::where('status', 'in_progress')->count(),
-    MaintenanceJob::where('status', 'completed')->count(),
-    MaintenanceJob::where('status', 'cancelled')->count(),
-];
+        $priorityChart = [
+            MaintenanceJob::where('priority', 'low')->count(),
+            MaintenanceJob::where('priority', 'medium')->count(),
+            MaintenanceJob::where('priority', 'high')->count(),
+            MaintenanceJob::where('priority', 'urgent')->count(),
+        ];
 
-$priorityChart = [
-    MaintenanceJob::where('priority', 'low')->count(),
-    MaintenanceJob::where('priority', 'medium')->count(),
-    MaintenanceJob::where('priority', 'high')->count(),
-    MaintenanceJob::where('priority', 'urgent')->count(),
-];
-    // Temporary fallback if News model is not added here yet:
-    $activeNews = 0;
+        $departmentData = Department::withCount('users')->get();
+        $departmentNames = $departmentData->pluck('name');
+        $departmentCounts = $departmentData->pluck('users_count');
 
-    $departmentData = Department::withCount('users')->get();
-    $departmentNames = $departmentData->pluck('name');
-    $departmentCounts = $departmentData->pluck('users_count');
+        $recentActivities = ActivityLog::with('user')
+            ->latest()
+            ->take(10)
+            ->get();
 
-    $recentActivities = ActivityLog::with('user')
-        ->latest()
-        ->take(10)
-        ->get();
+        $totalActivitiesToday = ActivityLog::whereDate('created_at', today())->count();
+        $totalMaintenanceJobs = MaintenanceJob::count();
 
-    $totalActivitiesToday = ActivityLog::whereDate('created_at', today())->count();
-    $totalMaintenanceJobs = MaintenanceJob::count();
+        return view('dashboard.admin.index', compact(
+            'totalHotels',
+            'activeHotels',
+            'recentActivities',
+            'totalEmployees',
+            'activeEmployees',
+            'openMaintenance',
+            'activeNews',
+            'pendingJobs',
+            'inProgressJobs',
+            'completedJobs',
+            'cancelledJobs',
+            'departmentNames',
+            'departmentCounts',
+            'totalActivitiesToday',
+            'totalMaintenanceJobs',
+            'statusChart',
+            'priorityChart'
+        ));
+    }
 
-    return view('dashboard.admin.index', compact(
-        'recentActivities',
-        'totalEmployees',
-        'activeEmployees',
-        'openMaintenance',
-        'activeNews',
-        'pendingJobs',
-        'inProgressJobs',
-        'completedJobs',
-        'cancelledJobs',
-        'departmentNames',
-        'departmentCounts',
-        'totalActivitiesToday',
-        'totalMaintenanceJobs',
-        'statusChart',
-        'priorityChart',
-    ));
-}
 public function index(Request $request)
 {
     $search = $request->search;
 
-    $users = User::with(['role', 'department'])
+    $users = User::with(['hotel', 'role', 'department'])
         ->when($search, function ($query) use ($search) {
-            $query->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%")
-                ->orWhereHas('role', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                })
-                ->orWhereHas('department', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('employee_code', 'like', "%{$search}%")
+                    ->orWhere('job_title', 'like', "%{$search}%")
+                    ->orWhereHas('hotel', function ($hotelQuery) use ($search) {
+                        $hotelQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('code', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('role', function ($roleQuery) use ($search) {
+                        $roleQuery->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('department', function ($departmentQuery) use ($search) {
+                        $departmentQuery->where('name', 'like', "%{$search}%");
+                    });
+            });
         })
         ->latest()
-        ->paginate(10);
+        ->paginate(10)
+        ->withQueryString();
 
     return view('dashboard.admin.showemployee', compact('users', 'search'));
 }
-//     public function index()
-// {
-//     $users = User::with(['role', 'department'])->get();
-//     return view('dashboard.admin.showemployee',compact('users'));
-// }
 
-public function addemployeepage(){
-    return view('dashboard.admin.addemp');
-}
-
-public function create()
+    public function addemployeepage()
     {
-        $roles = Role::all();
-        $departments = Department::all();
-            return view('dashboard.admin.addemp', compact('roles', 'departments'));
-        // return view('admin.users.create', compact('roles', 'departments'));
+        return redirect()->route('addemp');
     }
 
-public function store(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email',
-        'phone' => 'nullable|string',
-        'password' => 'required|min:6',
-        'role_id' => 'required|exists:roles,id',
-        'department_id' => 'nullable|exists:departments,id',
-    ]);
+    public function create()
+    {
+        $hotels = Hotel::where('is_active', true)->orderBy('name')->get();
+        $roles = Role::orderBy('name')->get();
+        $departments = Department::orderBy('name')->get();
 
-    $imagePath = null;
-
-    if ($request->hasFile('image')) {
-        $imagePath = $request->file('image')->store('users', 'public');
+        return view('dashboard.admin.addemp', compact('hotels', 'roles', 'departments'));
     }
 
-    $plainPassword = $request->password;
+    public function store(Request $request)
+    {
+        $request->validate([
+            'hotel_id' => 'nullable|exists:hotels,id',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:50',
+            'employee_code' => 'nullable|string|max:100|unique:users,employee_code',
+            'job_title' => 'nullable|string|max:150',
+            'password' => 'required|min:6',
+            'role_id' => 'required|exists:roles,id',
+            'department_id' => 'nullable|exists:departments,id',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
 
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'phone' => $request->phone,
-        'password' => Hash::make($plainPassword),
-        'role_id' => $request->role_id,
-        'image' => $imagePath,
-        'department_id' => $request->department_id,
-    ]);
+        $imagePath = null;
 
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('users', 'public');
+        }
 
+        $plainPassword = $request->password;
 
-    try {
-        Mail::to($user->email)
-            ->send(new EmployeeCredentialsMail($user, $plainPassword));
-    } catch (\Exception $e) {
-        Log::error('Employee credential email failed: ' . $e->getMessage());
+        $user = User::create([
+            'hotel_id' => $request->hotel_id,
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'employee_code' => $request->employee_code,
+            'job_title' => $request->job_title,
+            'password' => Hash::make($plainPassword),
+            'role_id' => $request->role_id,
+            'image' => $imagePath,
+            'department_id' => $request->department_id,
+            'status' => 'active',
+        ]);
+
+        try {
+            Mail::to($user->email)
+                ->send(new EmployeeCredentialsMail($user, $plainPassword));
+        } catch (\Exception $e) {
+            Log::error('Employee credential email failed: ' . $e->getMessage());
+
+            return redirect()
+                ->route('dashboard.admin.showemp')
+                ->with('success', 'Employee added successfully, but email could not be sent.');
+        }
 
         return redirect()
-            ->route('dashboard')
-            ->with('success', 'Employee added successfully, but email could not be sent.');
+            ->route('dashboard.admin.showemp')
+            ->with('success', 'Employee added successfully.');
     }
 
-    return redirect()
-        ->route('dashboard')
-        ->with('success', 'Employee added successfully.');
-}
     public function changeUserStatus($id)
-{
-    $user = User::findOrFail($id);
+    {
+        $user = User::findOrFail($id);
 
-    $user->status = $user->status === 'active' ? 'inactive' : 'active';
-    $user->save();
-    logActivity('Updated User', 'Admin', 'Updated employee details: ' . $user->name);
+        $user->status = $user->status === 'active' ? 'inactive' : 'active';
+        $user->save();
 
-    return back()->with('success', 'Employee status updated successfully.');
-}
+        if (function_exists('logActivity')) {
+            logActivity('Updated User', 'Admin', 'Updated employee status: ' . $user->name);
+        }
 
-public function destroy($id)
-{
-    $user = User::findOrFail($id);
-    $user->delete();
+        return back()->with('success', 'Employee status updated successfully.');
+    }
 
-    return back()->with('success', 'Employee deleted successfully.');
-}
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+
+        return back()->with('success', 'Employee deleted successfully.');
+    }
 }

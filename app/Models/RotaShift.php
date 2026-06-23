@@ -6,17 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class RotaShift extends Model
 {
-    protected $fillable = [
-        'user_id',
-        'department_id',
-        'shift_date',
-        'shift_type',
-        'start_time',
-        'end_time',
-        'break_minutes',
-        'status',
-        'notes',
-    ];
+protected $fillable = [
+    'hotel_id',
+    'user_id',
+    'department_id',
+    'shift_date',
+    'shift_type',
+    'start_time',
+    'end_time',
+    'break_minutes',
+    'status',
+    'notes',
+];
 
     public function user()
     {
@@ -27,4 +28,14 @@ class RotaShift extends Model
     {
         return $this->belongsTo(Department::class);
     }
+
+    public function hotel()
+{
+    return $this->belongsTo(Hotel::class);
+}
+
+public function creator()
+{
+    return $this->belongsTo(User::class, 'created_by');
+}
 }

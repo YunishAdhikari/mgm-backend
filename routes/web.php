@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ForecastGroupController;
+use App\Http\Controllers\Admin\HotelController;
 use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\MobileAppVersionController;
 use App\Http\Controllers\Admin\NewsController;
@@ -37,7 +38,7 @@ use App\Http\Controllers\Reception\MealForecastController;
 use App\Http\Controllers\Reception\RoomStatusController;
 use App\Http\Controllers\ReceptionDashboardController;
 use App\Http\Controllers\RestaurantBookingController;
-use App\Http\Controllers\RestaurantBookingSettingController;
+use App\Http\Controllers\Admin\RestaurantBookingSettingController;
 use App\Http\Controllers\RestaurantTableController;
 use App\Http\Controllers\RotaController;
 use App\Http\Controllers\SopController;
@@ -48,7 +49,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;    
 use App\Models\User;
 use App\Services\FirebaseNotificationService;
-
+use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\RestaurantController;
+use App\Http\Controllers\Dop\DopDashboardController;
+use App\Http\Controllers\Reception\DailyOperationController;
 
     // --- PUBLIC ROUTES ---
     Route::get('/', [LandingPageController::class, 'index'])->name('landing');
@@ -124,27 +128,37 @@ use App\Services\FirebaseNotificationService;
         //attendence settings
         Route::get('/admin/attendance-settings', [AdminAttendanceSettingController::class, 'edit'])->name('admin.attendance.settings');
         Route::post('/admin/attendance-settings', [AdminAttendanceSettingController::class, 'update'])->name('admin.attendance.settings.update');
+
         //resturant seetings
-        Route::get('/restaurant/settings', [RestaurantBookingSettingController::class, 'index'])->name('restaurant.settings.index');
-        Route::post('/restaurant/settings', [RestaurantBookingSettingController::class, 'store'])->name('restaurant.settings.store');
-        Route::get('/restaurant/tables', [RestaurantTableController::class, 'index'])->name('restaurant.tables.index');
-        Route::post('/restaurant/tables', [RestaurantTableController::class, 'store'])->name('restaurant.tables.store');
-        Route::put('/restaurant/tables/{table}', [RestaurantTableController::class, 'update'])->name('restaurant.tables.update');
-        Route::delete('/restaurant/tables/{table}', [RestaurantTableController::class, 'destroy'])->name('restaurant.tables.destroy');
-        Route::get('/restaurant/tables/floor-plan', [RestaurantTableController::class, 'floorPlan'])->name('restaurant.tables.floor-plan');
-        //Room Inventory
-        Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
-        Route::get('/rooms/create', [RoomController::class, 'create'])->name('rooms.create');
-        Route::post('/rooms/store', [RoomController::class, 'store'])->name('rooms.store');
-        Route::get('/rooms/{room}/edit', [RoomController::class, 'edit'])->name('rooms.edit');
-        Route::put('/rooms/{room}/update', [RoomController::class, 'update'])->name('rooms.update');
-        Route::delete('/rooms/{room}/delete', [RoomController::class, 'destroy'])->name('rooms.destroy');
-        //Room Type
+        Route::get('/hotels/{hotel}/restaurants', [RestaurantController::class, 'index'])->name('admin.hotels.restaurants.index');
+        Route::post('/hotels/{hotel}/restaurants', [RestaurantController::class, 'store'])->name('admin.hotels.restaurants.store');
+        Route::put('/restaurants/{restaurant}', [RestaurantController::class, 'update'])->name('admin.restaurants.update');
+        Route::delete('/restaurants/{restaurant}', [RestaurantController::class, 'destroy'])->name('admin.restaurants.destroy');
+        Route::get('/hotels/{hotel}/restaurants/{restaurant}/settings',[RestaurantBookingSettingController::class, 'index'])->name('admin.restaurants.settings.index');
+        Route::post('/hotels/{hotel}/restaurants/{restaurant}/settings',[RestaurantBookingSettingController::class, 'store'])->name('admin.restaurants.settings.store');
+        //
+        Route::get('/hotels/{hotel}/restaurants/{restaurant}/tables',[RestaurantTableController::class, 'index'])->name('admin.restaurants.tables.index');
+        Route::post('/hotels/{hotel}/restaurants/{restaurant}/tables',[RestaurantTableController::class, 'store'])->name('admin.restaurants.tables.store');
+        Route::put('/restaurant-tables/{table}',[RestaurantTableController::class, 'update'])->name('admin.restaurants.tables.update');
+        Route::delete('/restaurant-tables/{table}',[RestaurantTableController::class, 'destroy'])->name('admin.restaurants.tables.destroy');
+        Route::patch('/restaurant-tables/{table}/position', [RestaurantTableController::class, 'updatePosition'])->name('admin.restaurants.tables.update-position');
+        Route::post('/hotels/{hotel}/restaurants/{restaurant}/floor-objects', [RestaurantTableController::class, 'storeFloorObject'])->name('admin.restaurants.floor-objects.store');
+        Route::patch('/restaurant-floor-objects/{object}/position', [RestaurantTableController::class, 'updateFloorObjectPosition'])->name('admin.restaurants.floor-objects.update-position');
+        Route::delete('/restaurant-floor-objects/{object}', [RestaurantTableController::class, 'destroyFloorObject'])->name('admin.restaurants.floor-objects.destroy');
+        Route::get('/hotels/{hotel}/restaurants/{restaurant}/floor-plan',[RestaurantTableController::class, 'floorPlan'])->name('admin.restaurants.tables.floor-plan');
+
+
         // Room Types
-        Route::get('/admin/room-types', [RoomTypeController::class, 'index'])->name('admin.room-types.index');
-        Route::post('/admin/room-types/store', [RoomTypeController::class, 'store'])->name('admin.room-types.store');
-        Route::put('/admin/room-types/{roomType}/update', [RoomTypeController::class, 'update'])->name('admin.room-types.update');
-        Route::delete('/admin/room-types/{roomType}/delete', [RoomTypeController::class, 'destroy'])->name('admin.room-types.destroy');
+        Route::get('/hotels/{hotel}/room-types', [RoomTypeController::class, 'index'])->name('admin.hotels.room-types.index');
+        Route::post('/hotels/{hotel}/room-types', [RoomTypeController::class, 'store'])->name('admin.hotels.room-types.store');
+        Route::put('/hotels/{hotel}/room-types/{roomType}', [RoomTypeController::class, 'update'])->name('admin.hotels.room-types.update');
+        Route::delete('/hotels/{hotel}/room-types/{roomType}', [RoomTypeController::class, 'destroy'])->name('admin.hotels.room-types.destroy');
+
+        // Rooms
+        Route::get('/hotels/{hotel}/rooms', [RoomController::class, 'index'])->name('admin.hotels.rooms.index');
+        Route::post('/hotels/{hotel}/rooms', [RoomController::class, 'store'])->name('admin.hotels.rooms.store');
+        Route::put('/hotels/{hotel}/rooms/{room}', [RoomController::class, 'update'])->name('admin.hotels.rooms.update');
+        Route::delete('/hotels/{hotel}/rooms/{room}', [RoomController::class, 'destroy'])->name('admin.hotels.rooms.destroy');
 
         //Mobile app update android
         Route::get('/mobile-app-versions', [MobileAppVersionController::class, 'index'])->name('mobile-app-versions.index');
@@ -158,42 +172,55 @@ use App\Services\FirebaseNotificationService;
         Route::put('/forecast-groups/{forecastGroup}', [ForecastGroupController::class, 'update'])->name('forecast-groups.update');
         Route::delete('/forecast-groups/{forecastGroup}', [ForecastGroupController::class, 'destroy'])->name('forecast-groups.destroy');
 
-    });
+        //Hotels
+        Route::get('/hotels', [HotelController::class, 'index'])->name('admin.hotels.index');
+        Route::get('/hotels/create', [HotelController::class, 'create'])->name('admin.hotels.create');
+        Route::post('/hotels', [HotelController::class, 'store'])->name('admin.hotels.store');
+        Route::put('/hotels/{hotel}', [HotelController::class, 'update'])->name('admin.hotels.update');
+        Route::delete('/hotels/{hotel}', [HotelController::class, 'destroy'])->name('admin.hotels.destroy');
 
-    // --- KITCHEN SUPERVISOR ROUTES ---
-    // Access: Kitchen Supervisors Only
-    Route::middleware(['auth', 'role:Head chef'])->group(function () {
-        // AI Prep Plan
-        Route::get('/kitchen-supervisor/ai-prep-plan', [KitchenSupervisorController::class, 'aiPrepPlan'])->name('kitchen.ai.prep');
-        // Dashboard
-        Route::get('/kitchen-supervisor/dashboard', [KitchenSupervisorController::class, 'dashboard'])->name('kitchen.supervisor.dashboard');
-        // Inventory
-        Route::get('/kitchen-supervisor/inventory', [KitchenInventoryController::class, 'index'])->name('kitchen.inventory.index');
-        Route::post('/kitchen-supervisor/inventory/store', [KitchenInventoryController::class, 'store'])->name('kitchen.inventory.store');
-        Route::post('/kitchen-supervisor/inventory/{item}/stock', [KitchenInventoryController::class, 'stockUpdate'])->name('kitchen.inventory.stock');
-        Route::delete('/kitchen-supervisor/inventory/{item}', [KitchenInventoryController::class, 'destroy'])->name('kitchen.inventory.destroy');
-        Route::get('/kitchen-supervisor/current-inventory', [KitchenInventoryController::class, 'currentInventory'])->name('kitchen.inventory.current');
-        Route::put('/kitchen-supervisor/inventory/{item}/update', [KitchenInventoryController::class, 'update'])->name('kitchen.inventory.update');
-        Route::get('/kitchen-supervisor/inventory-history', [KitchenInventoryController::class, 'history'])->name('kitchen.inventory.history');
-        Route::get('/kitchen-supervisor/inventory-history/pdf', [KitchenInventoryController::class, 'historyPdf'])->name('kitchen.inventory.history.pdf');
-        // Recipes
-        Route::get('/kitchen-supervisor/recipes', [KitchenRecipeController::class, 'index'])->name('kitchen.recipes.index');
-        Route::post('/kitchen-supervisor/recipes/store', [KitchenRecipeController::class, 'store'])->name('kitchen.recipes.store');
-        Route::delete('/kitchen-supervisor/recipes/{menuItem}', [KitchenRecipeController::class, 'destroy'])->name('kitchen.recipes.destroy');
-        Route::put('/kitchen-supervisor/recipes/{menuItem}/update', [KitchenRecipeController::class, 'update'])->name('kitchen.recipes.update');
-        Route::get('/kitchen-supervisor/current-recipes', [KitchenRecipeController::class, 'currentRecipes'])->name('kitchen.recipes.current');
-        // Buffet
-        Route::get('/kitchen-supervisor/buffets', [KitchenBuffetController::class, 'index'])->name('kitchen.buffets.index');
-        Route::post('/kitchen-supervisor/buffets/store', [KitchenBuffetController::class, 'store'])->name('kitchen.buffets.store');
-        Route::post('/kitchen-supervisor/buffets/{buffetMenu}/sale', [KitchenBuffetController::class, 'storeSale'])->name('kitchen.buffets.sale');
-        // Wastage
-        Route::get('/kitchen-supervisor/wastage', [KitchenWastageController::class, 'index'])->name('kitchen.wastage.index');
-        Route::post('/kitchen-supervisor/wastage/store', [KitchenWastageController::class, 'store'])->name('kitchen.wastage.store');
-        // Rota
-        Route::get('/kitchen-supervisor/rota',[KitchenSupervisorController::class, 'index'])->name('kitchensupervisor.rota.index');
-        Route::post('/kitchen-supervisor/rota/store',[KitchenSupervisorController::class, 'storeRota'])->name('kitchensupervisor.rota.store');
-        Route::delete('/kitchen-supervisor/rota/{id}',[KitchenSupervisorController::class, 'destroy'])->name('kitchensupervisor.rota.destroy');
-        Route::get('/kitchen-supervisor/rota/view',[KitchenSupervisorController::class, 'view'])->name('kitchensupervisor.rota.view');
+        //Department
+        Route::get('/admin/departments', [DepartmentController::class, 'index'])->name('admin.departments.index');
+        Route::get('/admin/departments/create', [DepartmentController::class, 'create'])->name('admin.departments.create');
+        Route::post('/admin/departments', [DepartmentController::class, 'store'])->name('admin.departments.store');
+        Route::get('/admin/departments/{department}/edit', [DepartmentController::class, 'edit'])->name('admin.departments.edit');
+        Route::put('/admin/departments/{department}', [DepartmentController::class, 'update'])->name('admin.departments.update');
+        Route::delete('/admin/departments/{department}', [DepartmentController::class, 'destroy'])->name('admin.departments.destroy');
+
+        Route::get('/hotels/{hotel}/setup', [HotelController::class, 'setup'])->name('admin.hotels.setup');
+        Route::get('/hotels/{hotel}/spa', [HotelController::class, 'spa'])->name('admin.hotels.spa');
+        });
+
+        // --- KITCHEN SUPERVISOR ROUTES ---
+        // Access: Kitchen Supervisors Only
+Route::middleware(['auth', 'role:Head chef'])->prefix('kitchen-supervisor')->name('kitchen.')->group(function () {
+
+        Route::get('/dashboard', [KitchenSupervisorController::class, 'dashboard'])->name('supervisor.dashboard');
+        Route::get('/ai-prep-plan', [KitchenSupervisorController::class, 'aiPrepPlan'])->name('ai.prep');
+        Route::get('/inventory', [KitchenInventoryController::class, 'index'])->name('inventory.index');
+        Route::post('/inventory/store', [KitchenInventoryController::class, 'store'])->name('inventory.store');
+        Route::post('/inventory/{item}/stock', [KitchenInventoryController::class, 'stockUpdate'])->name('inventory.stock');
+        Route::put('/inventory/{item}/update', [KitchenInventoryController::class, 'update'])->name('inventory.update');
+        Route::delete('/inventory/{item}', [KitchenInventoryController::class, 'destroy'])->name('inventory.destroy');
+        Route::get('/current-inventory', [KitchenInventoryController::class, 'currentInventory'])->name('inventory.current');
+        Route::get('/inventory-history', [KitchenInventoryController::class, 'history'])->name('inventory.history');
+        Route::get('/inventory-history/pdf', [KitchenInventoryController::class, 'historyPdf'])->name('inventory.history.pdf');
+        Route::get('/recipes', [KitchenRecipeController::class, 'index'])->name('recipes.index');
+        Route::post('/recipes/store', [KitchenRecipeController::class, 'store'])->name('recipes.store');
+        Route::put('/recipes/{menuItem}/update', [KitchenRecipeController::class, 'update'])->name('recipes.update');
+        Route::delete('/recipes/{menuItem}', [KitchenRecipeController::class, 'destroy'])->name('recipes.destroy');
+        Route::get('/current-recipes', [KitchenRecipeController::class, 'currentRecipes'])->name('recipes.current');
+        Route::get('/buffets', [KitchenBuffetController::class, 'index'])->name('buffets.index');
+        Route::post('/buffets/store', [KitchenBuffetController::class, 'store'])->name('buffets.store');
+        Route::put('/buffets/{buffetMenu}/update', [KitchenBuffetController::class, 'update'])->name('buffets.update');
+        Route::delete('/buffets/{buffetMenu}', [KitchenBuffetController::class, 'destroy'])->name('buffets.destroy');
+        Route::post('/buffets/{buffetMenu}/sale', [KitchenBuffetController::class, 'storeSale'])->name('buffets.sale');
+        Route::get('/wastage', [KitchenWastageController::class, 'index'])->name('wastage.index');
+        Route::post('/wastage/store', [KitchenWastageController::class, 'store'])->name('wastage.store');
+        Route::get('/rota', [KitchenSupervisorController::class, 'index'])->name('rota.index');
+        Route::post('/rota/store', [KitchenSupervisorController::class, 'storeRota'])->name('rota.store');
+        Route::delete('/rota/{id}', [KitchenSupervisorController::class, 'destroy'])->name('rota.destroy');
+        Route::get('/rota/view', [KitchenSupervisorController::class, 'view']) ->name('rota.view');
     });
 
 
@@ -256,7 +283,7 @@ use App\Services\FirebaseNotificationService;
         Route::get('/dashboard', [ReceptionDashboardController::class, 'index'])->name('dashboard');
         Route::get('/restaurant-bookings', [RestaurantBookingController::class, 'index'])->name('restaurant.bookings.index');
         Route::get('/restaurant-bookings/{type}/slots', [RestaurantBookingController::class, 'slots'])->name('restaurant.bookings.slots');
-        Route::get('/restaurant-bookings/{type}/slots/{slotStart}/{slotEnd}/create', [RestaurantBookingController::class, 'create'])->name('restaurant.bookings.create');
+        Route::get('/restaurant-bookings/{type}/slots/{slotStart}/{slotEnd}/create',[RestaurantBookingController::class, 'create'])->name('restaurant.bookings.create');
         Route::post('/restaurant-bookings/store', [RestaurantBookingController::class, 'store'])->name('restaurant.bookings.store');
         //report
         Route::get('/restaurant-bookings/report', [RestaurantBookingController::class, 'report'])->name('restaurant.bookings.report');
@@ -274,8 +301,8 @@ use App\Services\FirebaseNotificationService;
         Route::get('/group-buffets',[GroupBuffetBookingController::class, 'index'])->name('group-buffets.index');
         Route::get('/group-buffets/create',[GroupBuffetBookingController::class, 'create'])->name('group-buffets.create');
         Route::post('/group-buffets',[GroupBuffetBookingController::class, 'store'])->name('group-buffets.store');
-        Route::put('/reception/group-buffets/{groupBuffet}', [GroupBuffetBookingController::class, 'update'])->name('group-buffets.update');
-        Route::get('/reception/group-buffets-report', [GroupBuffetBookingController::class, 'dailyReport'])->name('group-buffets.daily-report');
+        Route::put('/group-buffets/{groupBuffet}', [GroupBuffetBookingController::class, 'update'])->name('group-buffets.update');
+        Route::get('/group-buffets-report', [GroupBuffetBookingController::class, 'dailyReport'])->name('group-buffets.daily-report');
 
         Route::get('/meal-forecasts', [MealForecastController::class, 'index'])->name('meal-forecasts.index');
         Route::post('/meal-forecasts/daily-total', [MealForecastController::class, 'storeOrUpdateDailyTotal'])->name('meal-forecasts.store-daily-total');
@@ -283,6 +310,10 @@ use App\Services\FirebaseNotificationService;
         Route::get('/meal-forecasts/{mealForecast}/groups/create', [MealForecastController::class, 'createGroup'])->name('meal-forecasts.groups.create');
         Route::post('/meal-forecasts/{mealForecast}/groups', [MealForecastController::class, 'storeGroup'])->name('meal-forecasts.groups.store');
         Route::get('/meal-forecasts/report', [MealForecastController::class, 'report'])->name('meal-forecasts.report');
+
+        //Daily Operations
+        Route::get('/daily-operations', [DailyOperationController::class, 'index'])->name('daily-operations.index');
+        Route::post('/daily-operations', [DailyOperationController::class, 'store'])->name('daily-operations.store');
  
     });
 
@@ -325,6 +356,18 @@ use App\Services\FirebaseNotificationService;
         Route::get('/housekeeping/inspected-rooms', [HousekeepingInspectionController::class, 'inspectedRooms'])->name('inspectedRooms');
     });
 
+
+
+Route::middleware(['auth', 'role:director-of-operations'])->prefix('director-of-operations')->name('dop.')->group(function () {
+    Route::get('/dashboard', [DopDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/hotels/{hotel}', [DopDashboardController::class, 'hotel'])->name('hotels.show');
+    Route::get('/hotels-overview', [DopDashboardController::class, 'hotelsOverview'])->name('hotels.overview');
+    Route::get('/maintenance', [DopDashboardController::class, 'maintenance'])->name('maintenance.index');
+    Route::get('/complaints', [DopDashboardController::class, 'complaints'])->name('complaints.index');
+    Route::get('/staffing', [DopDashboardController::class, 'staffing'])->name('staffing.index');
+    Route::get('/housekeeping', [DopDashboardController::class, 'housekeeping'])->name('housekeeping.index');
+    Route::get('/reports', [DopDashboardController::class, 'reports'])->name('reports.index');
+});
 
 Route::get('/test-firebase-push', function () {
     $user = User::whereNotNull('fcm_token')->latest()->first();

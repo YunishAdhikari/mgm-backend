@@ -531,8 +531,8 @@
           <i class="fas fa-hotel"></i>
         </div>
         <div class="logo-text">
-          <span>MGRH</span>
-          <span>Muthu Glasgow River</span>
+         <span>MGM One</span>
+          <span>Multi Hotel Platform</span>
         </div>
       </div>
 
@@ -565,35 +565,26 @@
       </div>
 
       <!-- Management Section -->
-      <div class="menu-section">
-        <div class="menu-title">Management</div>
-        
-        {{-- <a href="#" class="menu-item">
-          <i class="fas fa-circle-exclamation"></i>
-          <span>Complaints</span>
-        </a> --}}
+<div class="menu-section">
+    <div class="menu-title">Management</div>
 
-        <a href="{{ route('mobile-app-versions.index') }}" class="menu-item">
-          <i class="fas fa-mobile"></i>
-          <span>Mobile App</span>
-        </a>
+    <a href="{{ route('admin.hotels.index') }}"
+       class="menu-item {{ request()->routeIs('admin.hotels.*') ? 'active' : '' }}">
+        <i class="fas fa-hotel"></i>
+        <span>Hotels</span>
+    </a>
+    
+    <a href="{{ route('admin.departments.index') }}"
+      class="menu-item {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">
+        <i class="fa-solid fa-building"></i>
+        <span>Departments</span>
+    </a>
 
-        <div class="menu-dropdown">
-          <button type="button" class="menu-item dropdown-toggle">
-            <i class="fas fa-screwdriver-wrench"></i>
-            <span>Maintenance</span>
-            <i class="fas fa-chevron-down arrow"></i>
-          </button>
-          <div class="submenu">
-            <a href="{{ route('admin.maintenance.create') }}" class="submenu-item {{ request()->routeIs('admin.maintenance.create') ? 'active' : '' }}">
-              <i class="fas fa-plus"></i> Add Maintenance
-            </a>
-            <a href="{{ route('admin.maintenance.index') }}" class="submenu-item {{ request()->routeIs('admin.maintenance.index') ? 'active' : '' }}">
-              <i class="fas fa-list"></i> View Maintenance
-            </a>
-          </div>
-        </div>
-      </div>
+    <a href="{{ route('mobile-app-versions.index') }}" class="menu-item">
+        <i class="fas fa-mobile"></i>
+        <span>Mobile App</span>
+    </a>
+</div>
 
       <!-- Employee Management -->
       <div class="menu-section">
@@ -605,37 +596,6 @@
         <a href="{{ route('dashboard.admin.showemp') }}" class="menu-item {{ request()->routeIs('dashboard.admin.showemp') ? 'active' : '' }}">
           <i class="fas fa-users"></i>
           <span>Employee List</span>
-        </a>
-      </div>
-
-      <!-- F&B Management -->
-      <div class="menu-section">
-        <div class="menu-title">F&B</div>
-        <a href="{{ route('restaurant.tables.index') }}" class="menu-item {{ request()->routeIs('restaurant.tables.index') ? 'active' : '' }}">
-          <i class="fas fa-chair"></i>
-          <span>Tables</span>
-        </a>
-        <a href="{{ route('restaurant.settings.index') }}" class="menu-item {{ request()->routeIs('restaurant.settings.index') ? 'active' : '' }}">
-          <i class="fas fa-clock"></i>
-          <span>Timing</span>
-        </a>
-
-         <a href="{{ route('forecast-groups.index') }}" class="menu-item {{ request()->routeIs('forecast-groups.index') ? 'active' : '' }}">
-          <i class="fas fa-users"></i>
-          <span>Groups</span>
-        </a>
-      </div>
-
-      <!-- Room Management -->
-      <div class="menu-section">
-        <div class="menu-title">Rooms</div>
-        <a href="{{ route('admin.room-types.index') }}" class="menu-item {{ request()->routeIs('admin.room-types.index') ? 'active' : '' }}">
-          <i class="fas fa-bed"></i>
-          <span>Room Types</span>
-        </a>
-        <a href="{{ route('rooms.index') }}" class="menu-item {{ request()->routeIs('rooms.index') ? 'active' : '' }}">
-          <i class="fas fa-door-open"></i>
-          <span>Rooms</span>
         </a>
       </div>
 
@@ -652,7 +612,7 @@
 
         <div class="page-title">
           <strong>@yield('page-title', 'Dashboard')</strong>
-          <span>MGRH ADMIN PANEL</span>
+          <span>MGM ONE PLATFORM ADMIN</span>
         </div>
 
         <div class="topbar-actions">
