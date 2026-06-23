@@ -56,6 +56,13 @@
                         <td>
                             {{ $room->inspectedBy->name ?? 'N/A' }}
                         </td>
+                        <td>
+                            @if(!empty($room->inspected_at))
+                                {{ \Carbon\Carbon::parse($room->inspected_at)->format('d M Y H:i') }}
+                            @else
+                                -
+                            @endif
+                        </td>
                     </tr>
                 @empty
                     <tr>
