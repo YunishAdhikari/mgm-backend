@@ -119,24 +119,24 @@ class HousekeepingInspectionController extends Controller
 
         return view('dashboard.housekeeping.inspection.ooo', compact('rooms', 'stats'));
     }
-public function inspectedRooms()
-{
-    $hotelId = $this->hotelId();
 
-    $rooms = HousekeepingRoomAllocation::with([
-            'room',
-            'assignedTo',
-            'inspectedBy',
-            'roomStatusUpdate',
-        ])
-        ->where('hotel_id', $hotelId)
-        ->where('cleaning_status', 'inspected')
-        ->whereDate('allocation_date', today())
-        ->latest('inspected_at')
-        ->get();
+    public function inspectedRooms()
+    {
+        $hotelId = $this->hotelId();
 
-    return view('dashboard.housekeeping.inspected-rooms', compact('rooms'));
-}
+        $rooms = HousekeepingRoomAllocation::with([
+                'room',
+                'assignedTo',
+                'assignedBy',
+                'roomStatusUpdate',
+            ])
+            ->where('hotel_id', $hotelId)
+            ->where('cleaning_status', 'inspected')
+            ->latest('inspected_at')
+            ->get();
+
+        return view('dashboard.housekeeping.inspected-rooms', compact('rooms'));
+    }
 
     private function ensureAllocationBelongsToHotel(HousekeepingRoomAllocation $allocation): void
     {
