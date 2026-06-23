@@ -29,7 +29,7 @@
                     <th>Cleaned By</th>
                     <th>Inspected By</th>
                     <th>Inspection Time</th>
-                    <th>Status</th>
+                    {{-- <th>Status</th> --}}
                 </tr>
             </thead>
 
