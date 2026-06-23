@@ -20,6 +20,46 @@
     </div>
 
     <div class="table-wrap">
+        <form method="GET" class="filter-card">
+    <div>
+        <label>Date</label>
+        <input type="date" name="date" value="{{ request('date', today()->toDateString()) }}">
+    </div>
+
+    <div>
+        <label>Cleaned By</label>
+        <select name="staff_id">
+            <option value="">All Staff</option>
+            @foreach($staff as $member)
+                <option value="{{ $member->id }}" {{ request('staff_id') == $member->id ? 'selected' : '' }}>
+                    {{ $member->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+    <div>
+        <label>Room Type</label>
+        <select name="room_status">
+            <option value="">All Types</option>
+            <option value="departure" {{ request('room_status') == 'departure' ? 'selected' : '' }}>Departure</option>
+            <option value="stay" {{ request('room_status') == 'stay' ? 'selected' : '' }}>Stay</option>
+            <option value="stayover" {{ request('room_status') == 'stayover' ? 'selected' : '' }}>Stayover</option>
+            <option value="room_move" {{ request('room_status') == 'room_move' ? 'selected' : '' }}>Room Move</option>
+            <option value="carry_forward" {{ request('room_status') == 'carry_forward' ? 'selected' : '' }}>Carry Forward</option>
+        </select>
+    </div>
+
+    <div class="filter-actions">
+        <button type="submit">
+            <i class="fas fa-filter"></i> Filter
+        </button>
+
+        <a href="{{ route('housekeeping-supervisor.inspectedRooms') }}">
+            Reset
+        </a>
+    </div>
+</form>
         <table class="data-table">
             <thead>
                 <tr>
@@ -179,6 +219,71 @@
 
 .empty-state p{
     color:#9ca3af;
+}
+
+.filter-card{
+    background:#18181b;
+    border:1px solid #27272a;
+    border-radius:16px;
+    padding:18px;
+    margin-bottom:20px;
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:16px;
+    align-items:end;
+}
+
+.filter-card label{
+    display:block;
+    color:#9ca3af;
+    font-size:12px;
+    font-weight:700;
+    margin-bottom:7px;
+}
+
+.filter-card input,
+.filter-card select{
+    width:100%;
+    background:#09090b;
+    border:1px solid #27272a;
+    color:#fff;
+    border-radius:10px;
+    padding:11px 12px;
+}
+
+.filter-actions{
+    display:flex;
+    gap:10px;
+}
+
+.filter-actions button,
+.filter-actions a{
+    height:43px;
+    padding:0 16px;
+    border-radius:10px;
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+}
+
+.filter-actions button{
+    background:#dc2626;
+    color:white;
+    border:none;
+}
+
+.filter-actions a{
+    background:#27272a;
+    color:#fff;
+    text-decoration:none;
+}
+
+@media(max-width:900px){
+    .filter-card{
+        grid-template-columns:1fr;
+    }
 }
 
 </style>

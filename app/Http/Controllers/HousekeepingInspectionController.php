@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\HousekeepingRoomAllocation;
 use App\Models\RoomStatusUpdate;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class HousekeepingInspectionController extends Controller
@@ -120,23 +121,50 @@ class HousekeepingInspectionController extends Controller
         return view('dashboard.housekeeping.inspection.ooo', compact('rooms', 'stats'));
     }
 
-    public function inspectedRooms()
-    {
-        $hotelId = $this->hotelId();
+public function inspectedRooms(Request $request)
+{
+    $hotelId = $this->hotelId();
 
-        $rooms = HousekeepingRoomAllocation::with([
-                'room',
-                'assignedTo',
-                'assignedBy',
-                'roomStatusUpdate',
-            ])
-            ->where('hotel_id', $hotelId)
-            ->where('cleaning_status', 'inspected')
-            ->latest('inspected_at')
-            ->get();
+    $query = HousekeepingRoomAllocation::with([
+            'room',
+            'assignedTo',
+            'inspectedBy',
+            'roomStatusUpdate',
+        ])
+        ->where('hotel_id', $hotelId)
+        ->where('cleaning_status', 'inspected');
 
-        return view('dashboard.housekeeping.inspected-rooms', compact('rooms'));
+    if ($request->filled('date')) {
+        $query->whereDate('allocation_date', $request->date);
+    } else {
+        $query->whereDate('allocation_date', today());
     }
+
+    if ($request->filled('staff_id')) {
+        $query->where('assigned_to', $request->staff_id);
+    }
+
+    if ($request->filled('room_status')) {
+        $query->whereHas('roomStatusUpdate', function ($q) use ($request) {
+            $q->where('status', $request->room_status);
+        });
+    }
+
+    $rooms = $query->latest('inspected_at')->get();
+
+    $staff = User::where('hotel_id', $hotelId)
+        ->whereHas('department', function ($q) use ($hotelId) {
+            $q->where('hotel_id', $hotelId)
+              ->whereIn('name', ['Housekeeping', 'HK', 'House Keeping']);
+        })
+        ->orderBy('name')
+        ->get();
+
+    return view('dashboard.housekeeping.inspected-rooms', compact(
+        'rooms',
+        'staff'
+    ));
+}
 
     private function ensureAllocationBelongsToHotel(HousekeepingRoomAllocation $allocation): void
     {
