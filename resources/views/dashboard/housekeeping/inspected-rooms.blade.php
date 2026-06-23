@@ -37,40 +37,25 @@
                 @forelse($rooms as $room)
                     <tr>
 
-                        <td>
-                            <strong>{{ $room->room_number }}</strong>
+                       <td>
+                            <strong>{{ $room->room->room_number ?? '-' }}</strong>
                         </td>
 
                         <td>
-                            {{ $room->floor ?? '-' }}
+                            {{ $room->room->floor ?? (is_numeric($room->room->room_number ?? null) ? substr($room->room->room_number, 0, 1) : '-') }}
                         </td>
 
                         <td>
-                            {{ $room->room_type ?? '-' }}
+                            {{ $room->roomStatusUpdate->status ?? '-' }}
                         </td>
 
                         <td>
-                            {{ $room->assignedUser->name ?? 'N/A' }}
+                            {{ $room->assignedTo->name ?? 'N/A' }}
                         </td>
 
                         <td>
                             {{ $room->inspectedBy->name ?? 'N/A' }}
                         </td>
-
-                        <td>
-                            @if($room->inspected_at)
-                                {{ \Carbon\Carbon::parse($room->inspected_at)->format('d M Y H:i') }}
-                            @else
-                                -
-                            @endif
-                        </td>
-
-                        <td>
-                            <span class="badge badge-success">
-                                Inspected
-                            </span>
-                        </td>
-
                     </tr>
                 @empty
                     <tr>
