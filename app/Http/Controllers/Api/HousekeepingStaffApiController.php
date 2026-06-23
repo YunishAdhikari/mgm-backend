@@ -8,6 +8,7 @@ use App\Models\HousekeepingRoomAllocation;
 use App\Models\MaintenanceJob;
 use App\Models\User;
 use App\Services\FirebaseNotificationService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -454,33 +455,33 @@ class HousekeepingStaffApiController extends Controller
         ]);
     }
 
-    private function checkOwnership(Request $request, HousekeepingRoomAllocation $allocation): void
-    {
-        $user = $request->user();
+private function checkOwnership(Request $request, HousekeepingRoomAllocation $allocation): void
+{
+    $user = $request->user();
 
-        if ((int) $allocation->hotel_id !== (int) $user->hotel_id) {
-            abort(403, 'You are not allowed to access this hotel room.');
-        }
-
-        if ((int) $allocation->assigned_to !== (int) $user->id) {
-            abort(403, 'You are not allowed to update this room.');
-        }
-
-        if ($allocation->allocation_date !== today()->toDateString()) {
-            abort(403, 'You can only update today allocated rooms.');
-        }
+    if ((int) $allocation->hotel_id !== (int) $user->hotel_id) {
+        abort(403, 'You are not allowed to access this hotel room.');
     }
 
-    private function checkHotelAccess(Request $request, HousekeepingRoomAllocation $allocation): void
-    {
-        if ((int) $allocation->hotel_id !== (int) $request->user()->hotel_id) {
-            abort(403, 'You are not allowed to access this hotel room.');
-        }
-
-        if ($allocation->allocation_date !== today()->toDateString()) {
-            abort(403, 'You can only update today allocated rooms.');
-        }
+    if ((int) $allocation->assigned_to !== (int) $user->id) {
+        abort(403, 'You are not allowed to update this room.');
     }
+
+    if (Carbon::parse($allocation->allocation_date)->toDateString() !== today()->toDateString()) {
+        abort(403, 'You can only update today allocated rooms.');
+    }
+}
+
+private function checkHotelAccess(Request $request, HousekeepingRoomAllocation $allocation): void
+{
+    if ((int) $allocation->hotel_id !== (int) $request->user()->hotel_id) {
+        abort(403, 'You are not allowed to access this hotel room.');
+    }
+
+    if (Carbon::parse($allocation->allocation_date)->toDateString() !== today()->toDateString()) {
+        abort(403, 'You can only update today allocated rooms.');
+    }
+}
 
     private function sendPushToUser(?User $user, string $title, string $body, array $data = []): bool
     {
