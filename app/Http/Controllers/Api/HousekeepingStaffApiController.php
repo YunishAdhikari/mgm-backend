@@ -387,6 +387,8 @@ class HousekeepingStaffApiController extends Controller
         $allocation->update([
             'cleaning_status' => 'inspected',
             'inspected_at' => now(),
+            'inspected_by' => auth()->id(),
+
         ]);
 
         $roomNumber = $allocation->room->room_number ?? '-';

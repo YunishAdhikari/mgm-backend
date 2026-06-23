@@ -19,6 +19,9 @@ class HousekeepingRoomAllocation extends Model
         'started_at',
         'cleaned_at',
         'inspected_at',
+        'inspected_by',
+
+        
     ];
 
     protected $casts = [
@@ -26,6 +29,7 @@ class HousekeepingRoomAllocation extends Model
         'started_at' => 'datetime',
         'cleaned_at' => 'datetime',
         'inspected_at' => 'datetime',
+        
     ];
 
     /*
@@ -58,4 +62,9 @@ class HousekeepingRoomAllocation extends Model
     {
         return $this->belongsTo(User::class, 'assigned_by');
     }
+
+    public function inspectedBy()
+{
+    return $this->belongsTo(User::class, 'inspected_by');
+}
 }
