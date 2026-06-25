@@ -217,10 +217,10 @@ Route::middleware(['auth', 'role:Head-chef'])->prefix('kitchen-supervisor')->nam
         Route::post('/buffets/{buffetMenu}/sale', [KitchenBuffetController::class, 'storeSale'])->name('buffets.sale');
         Route::get('/wastage', [KitchenWastageController::class, 'index'])->name('wastage.index');
         Route::post('/wastage/store', [KitchenWastageController::class, 'store'])->name('wastage.store');
-        Route::get('/rota', [KitchenSupervisorController::class, 'index'])->name('rota.index');
-        Route::post('/rota/store', [KitchenSupervisorController::class, 'storeRota'])->name('rota.store');
-        Route::delete('/rota/{id}', [KitchenSupervisorController::class, 'destroy'])->name('rota.destroy');
-        Route::get('/rota/view', [KitchenSupervisorController::class, 'view']) ->name('rota.view');
+        Route::get('/rota', [KitchenSupervisorController::class, 'index'])->name('kitchensupervisor.rota.index');
+        Route::post('/rota/store', [KitchenSupervisorController::class, 'storeRota'])->name('kitchensupervisor.rota.store');
+        Route::delete('/rota/{id}', [KitchenSupervisorController::class, 'destroy'])->name('kitchensupervisor.rota.destroy');
+        Route::get('/rota/view', [KitchenSupervisorController::class, 'view']) ->name('kitchensupervisor.rota.view');
     });
 
 
