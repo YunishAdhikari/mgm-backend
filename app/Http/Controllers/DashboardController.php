@@ -73,8 +73,8 @@ class DashboardController extends Controller
         if (
             in_array($departmentSlug, ['kitchen']) ||
             in_array($departmentName, ['kitchen']) ||
-            in_array($roleSlug, ['head-chef', 'kitchen-supervisor']) ||
-            in_array($roleName, ['head chef', 'kitchen supervisor'])
+            in_array($roleSlug, ['Head-chef', 'kitchen-supervisor']) ||
+            in_array($roleName, ['Head chef', 'kitchen supervisor'])
         ) {
             return redirect()->route('kitchen.supervisor.dashboard');
         }
