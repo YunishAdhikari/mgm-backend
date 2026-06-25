@@ -193,7 +193,7 @@ use App\Http\Controllers\Reception\DailyOperationController;
 
         // --- KITCHEN SUPERVISOR ROUTES ---
         // Access: Kitchen Supervisors Only
-Route::middleware(['auth', 'role:Head chef'])->prefix('kitchen-supervisor')->name('kitchen.')->group(function () {
+Route::middleware(['auth', 'role:Head-chef'])->prefix('kitchen-supervisor')->name('kitchen.')->group(function () {
 
         Route::get('/dashboard', [KitchenSupervisorController::class, 'dashboard'])->name('supervisor.dashboard');
         Route::get('/ai-prep-plan', [KitchenSupervisorController::class, 'aiPrepPlan'])->name('ai.prep');
