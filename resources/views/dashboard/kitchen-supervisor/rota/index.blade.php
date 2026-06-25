@@ -20,7 +20,7 @@
         </div>
     @endif
 
-    <form action="{{ route('supervisor.rota.store') }}" method="POST" class="rota-form">
+    <form action="{{ route('kitchen.rota.store') }}" method="POST" class="rota-form">
         @csrf
 
         <div class="form-grid">
