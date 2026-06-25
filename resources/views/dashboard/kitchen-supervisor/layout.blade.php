@@ -800,7 +800,7 @@
     <!-- Management -->
     <div class="nav-section">
         <div class="nav-title">Management</div>
-        <a href="{{ route('kitchensupervisor.rota.index') }}" class="nav-link">
+        <a href="{{ route('kitchen.rota.index') }}" class="nav-link">
             <i class="fas fa-calendar-days"></i>
             <span>Rota</span>
         </a>
