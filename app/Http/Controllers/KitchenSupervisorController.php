@@ -97,45 +97,47 @@ class KitchenSupervisorController extends Controller
         ));
     }
 
-    public function storeRota(Request $request)
-    {
-        $supervisor = auth()->user();
+public function storeRota(Request $request)
+{
+    $supervisor = auth()->user();
 
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'shift_date' => 'required|date',
-            'shift_type' => 'required|in:morning,evening,night,split,day_off,holiday,sick',
-            'start_time' => 'nullable',
-            'end_time' => 'nullable',
-            'notes' => 'nullable|string|max:1000',
-        ]);
+    $request->validate([
+        'user_id' => 'required|exists:users,id',
+        'shift_date' => 'required|date',
+        'shift_type' => 'required|in:morning,evening,night,split,day_off,holiday,sick',
+        'start_time' => 'nullable',
+        'end_time' => 'nullable',
+        'notes' => 'nullable|string|max:1000',
+    ]);
 
-        $employee = User::where('id', $request->user_id)
-            ->where('hotel_id', $supervisor->hotel_id)
-            ->where('department_id', $supervisor->department_id)
-            ->firstOrFail();
+    $employee = User::where('id', $request->user_id)
+        ->where('hotel_id', $supervisor->hotel_id)
+        ->where('department_id', $supervisor->department_id)
+        ->firstOrFail();
 
-        RotaShift::updateOrCreate(
-            [
-                'user_id' => $employee->id,
-                'shift_date' => $request->shift_date,
-            ],
-            [
-                'department_id' => $supervisor->department_id,
-                'shift_type' => $request->shift_type,
-                'start_time' => in_array($request->shift_type, ['day_off', 'holiday', 'sick'])
-                    ? null
-                    : $request->start_time,
-                'end_time' => in_array($request->shift_type, ['day_off', 'holiday', 'sick'])
-                    ? null
-                    : $request->end_time,
-                'notes' => $request->notes,
-                'created_by' => $supervisor->id,
-            ]
-        );
+    RotaShift::updateOrCreate(
+        [
+            'hotel_id' => $supervisor->hotel_id,
+            'user_id' => $employee->id,
+            'shift_date' => $request->shift_date,
+        ],
+        [
+            'hotel_id' => $supervisor->hotel_id,
+            'department_id' => $supervisor->department_id,
+            'shift_type' => $request->shift_type,
+            'start_time' => in_array($request->shift_type, ['day_off', 'holiday', 'sick'])
+                ? null
+                : $request->start_time,
+            'end_time' => in_array($request->shift_type, ['day_off', 'holiday', 'sick'])
+                ? null
+                : $request->end_time,
+            'notes' => $request->notes,
+            'created_by' => $supervisor->id,
+        ]
+    );
 
-        return back()->with('success', 'Shift saved successfully.');
-    }
+    return back()->with('success', 'Shift saved successfully.');
+}
 
     public function destroy($id)
     {
