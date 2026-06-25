@@ -804,7 +804,7 @@
             <i class="fas fa-calendar-days"></i>
             <span>Rota</span>
         </a>
-        <a href="{{ route('kitchensupervisor.rota.view') }}" class="nav-link">
+        <a href="{{ route('kitchen.rota.view') }}" class="nav-link">
             <i class="fas fa-clock"></i>View Rota
         </a>
         <a href="#" class="nav-link">
